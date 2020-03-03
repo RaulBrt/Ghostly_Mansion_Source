@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <math.h>
 #include <graphics.h>
+
+#include <conio.h>
 static double conv = (3.14159265359/180);
 int res[2] = {1000,1000};
 
 //Classify stuff=======================================================
 
-class player{
-	public:
+struct player{
 	int alcance;
     int tamanho;
-    class pos{
-    	public:
+    struct pos{
         int x;
         int y;
         int angle;
@@ -22,12 +22,10 @@ class player{
     };
     pos pos;
 };
-class enemy{
-	public:
+struct enemy{
 		int tamanho;
 		int color[3];
-		class pos{
-			public:
+		struct pos{
 				int x;
 				int y;
 				int relx;
@@ -38,19 +36,22 @@ class enemy{
 		};
 	pos pos;
 };
-class background{
-	public:
+struct background{
 		int larg;
 		int alt;
-		class pos{
-			public:
+		struct pos{
 				int x;
 				int y;
 		};
 	pos pos;
 };
 player player;
-enemy enemy;
+enemy enemy1;
+enemy enemy2;
+enemy enemy3;
+enemy enemy4;
+enemy enemy5;
+enemy enemy[5] = {enemy1,enemy2,enemy3,enemy4,enemy5};
 background bac;
 int xpos=0;
 int ypos=0;
@@ -58,6 +59,7 @@ int posx = 0;
 int posy = 0;
 int hitx = 0;
 int hity = 0;
+int spwedenmy = 0;
 //=======================================================
 void screenflashlight(int angle,int centerx,int centery,int radius){
 	double nangle=angle*(conv);
@@ -78,16 +80,17 @@ int main(){
 	//Define stuff===========================================================================================
 	initwindow(res[0],res[1]);
     int done = 0;
-    int ca,ascii,pg;
+    int ca,pg;
+    int index = 0;
     double co;
-    bool pressed;
-    enemy.pos.relx = 400;
-    enemy.pos.rely = 700;
-    enemy.tamanho = 5;
+    enemy[index].pos.relx = 400;
+    enemy[index].pos.rely = 700;
+    enemy[index].tamanho = 5;
     player.pos.x = 500;
     player.pos.y = 500;
     player.alcance = 450;
     player.pos.angle = 270;
+    player.tamanho = 10;
     bac.larg = 1920;
     bac.alt = 1080;
     bac.pos.x = player.pos.x-((int)bac.larg/2);
@@ -99,6 +102,7 @@ int main(){
 	char kb;
 	//Play stuff===========================================================================================
 	cleardevice();
+	
     while(done == 0){
     	for(pg = 1; pg<=2;pg++){
     		setactivepage(pg);
@@ -106,70 +110,64 @@ int main(){
 	    	//Move stuff=======================================================================================
 	    	player.pos.relx = player.pos.x - bac.pos.x;
 	    	player.pos.rely = player.pos.y - bac.pos.y;
-	    	enemy.pos.x = player.pos.x+(enemy.pos.rely-player.pos.relx);
-	    	enemy.pos.y = player.pos.y+(enemy.pos.rely-player.pos.rely);
-	    	pressed = kbhit();
-	       	if(pressed){
-	        	kb = getch();
-	        	ascii = (int)kb;
-	        	if(ascii == 119 && player.pos.rely > 0){
-	        		printf("UP\n");
-	        		bac.pos.y+=5;
-	        		printf("%d",player.pos.rely);
-				}
-				else if(ascii == 97 && player.pos.relx > 0){
-	        		printf("LEFT\n");
-	        		bac.pos.x+=5;
-	        		printf("%d",player.pos.relx);
-				}
-	 			else if(ascii ==  115 &&  player.pos.rely < bac.alt){
-	        		printf("DOWN\n");
-	        		bac.pos.y-=5;
-				}
-				else if(ascii == 100 && player.pos.relx < bac.larg){
-	        		printf("RIGHT\n");
-	        		bac.pos.x-=5;
-				}
-				else if(ascii == 77){
-	        		printf("Clockwise\n");
-	        		player.pos.angle+=2;
-				}
-				else if(ascii == 75){
-	        		printf("Counter-Clockwise\n");
-	        		player.pos.angle-=2;
-				}
-				pressed = false;
-				kb = NULL;
-				ascii = NULL;
+	    	enemy[index].pos.x = player.pos.x+(enemy[index].pos.rely-player.pos.relx);
+	    	enemy[index].pos.y = player.pos.y+(enemy[index].pos.rely-player.pos.rely);
+      		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.rely-player.tamanho > 0){
+	        	printf("UP\n");
+	        	bac.pos.y+=5;
+	        	printf("%d",player.pos.rely);
 			}
-			kb = NULL;
-			ascii = NULL;
+			if((GetAsyncKeyState('A') & 0x8000) && player.pos.relx-player.tamanho > 0){
+	       		printf("LEFT\n");
+	       		bac.pos.x+=5;
+	       		printf("%d",player.pos.relx);
+			}
+ 			if((GetAsyncKeyState('S') & 0x8000) && player.pos.rely+player.tamanho < bac.alt){
+        		printf("DOWN\n");
+        		bac.pos.y-=5;
+			}
+			if((GetAsyncKeyState('D') & 0x8000) && player.pos.relx+player.tamanho < bac.larg){
+        		printf("RIGHT\n");
+        		bac.pos.x-=5;
+			}
+			if(GetAsyncKeyState(VK_RIGHT) & 0x8000){
+        		printf("Clockwise\n");
+        		player.pos.angle+=2;
+			}
+			if(GetAsyncKeyState(VK_LEFT) & 0x8000){
+        		printf("Counter-Clockwise\n");
+        		player.pos.angle-=2;
+			}
 			if(player.pos.angle>359){
 	            player.pos.angle = 0;
 	        }
 			if(player.pos.angle<0){
 	            player.pos.angle = 359;
 	        }
-	        //Hit stuff=======================================================================================
-	    	enemy.pos.angle = (int)(atan((float)(enemy.pos.y-player.pos.y)/(float)(enemy.pos.x-player.pos.x))*(180/3.14159265359));
-			if(enemy.pos.angle < 0){
-				enemy.pos.angle+=180;
-			}	
-			if(enemy.pos.y<player.pos.y){
-				enemy.pos.angle+=180;
+	        if(player.pos.y == enemy[0].pos.y){
+	        	player.pos.y+=1;
+	        	printf("Check\n");
 			}
-			enemy.pos.hitangle = enemy.pos.angle-player.pos.angle;
-			hitbox(enemy.pos.x,enemy.pos.y,enemy.pos.hitangle,player.pos.x,player.pos.y);
-			enemy.pos.hit[0] = hitx;
-			enemy.pos.hit[1] = hity;
+	        //Hit stuff=======================================================================================
+	    	enemy[index].pos.angle = (int)(atan((float)(enemy[index].pos.y-player.pos.y)/(float)(enemy[index].pos.x-player.pos.x))*(180/3.14159265359));
+			if(enemy[index].pos.angle < 0){
+				enemy[index].pos.angle+=180;
+			}	
+			if(enemy[index].pos.y<player.pos.y){
+				enemy[index].pos.angle+=180;
+			}
+			enemy[index].pos.hitangle = enemy[index].pos.angle-player.pos.angle;
+			hitbox(enemy[index].pos.x,enemy[index].pos.y,enemy[index].pos.hitangle,player.pos.x,player.pos.y);
+			enemy[index].pos.hit[0] = hitx;
+			enemy[index].pos.hit[1] = hity;
 			player.pos.hit[0] = player.pos.x+player.alcance;
 			player.pos.hit[1] = player.pos.y;
-			enemy.color = {0,255,0};
-			if(enemy.pos.hit[0]>player.pos.x){
-	   			ca = (enemy.pos.hit[0]-player.pos.x);
+			enemy[index].color = {0,255,0};
+			if(enemy[index].pos.hit[0]>player.pos.x && (enemy[index].pos.hitangle < 90 || enemy[index].pos.hitangle > 270)){
+	   			ca = (enemy[index].pos.hit[0]-player.pos.x);
 	   	    	co = ca*tan(15*conv);
-	   	    	if (abs(enemy.pos.hit[1]-player.pos.y)<co && sqrt(((enemy.pos.x-player.pos.x)*(enemy.pos.x-player.pos.x))+((enemy.pos.y-player.pos.y)*(enemy.pos.y-player.pos.y)))<=player.alcance){
-	   				enemy.color = {255,0,0};
+	   	    	if (abs(enemy[index].pos.hit[1]-player.pos.y)<co && sqrt(((enemy[index].pos.x-player.pos.x)*(enemy[index].pos.x-player.pos.x))+((enemy[index].pos.y-player.pos.y)*(enemy[index].pos.y-player.pos.y)))<=player.alcance){
+	   				enemy[index].color = {255,0,0};
 	   			}
 	        }
 	        //Draw stuff=======================================================================================
@@ -179,10 +177,10 @@ int main(){
 	        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.alcance);
 	        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
 	        fillpoly(4,flash);
-	        if(enemy.pos.x > -5 && enemy.pos.x < res[0]+5 && enemy.pos.y > -5 && enemy.pos.y < res[1]+5){
-	        	setcolor(RGB(enemy.color[0],enemy.color[1],enemy.color[2]));
-	        	setfillstyle(1,RGB(enemy.color[0],enemy.color[1],enemy.color[2]));
-	        	fillellipse(enemy.pos.x,enemy.pos.y,enemy.tamanho,enemy.tamanho);
+	        if(enemy[index].pos.x > -5 && enemy[index].pos.x < res[0]+5 && enemy[index].pos.y > -5 && enemy[index].pos.y < res[1]+5){
+	        	setcolor(RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
+	        	setfillstyle(1,RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
+	        	fillellipse(enemy[index].pos.x,enemy[index].pos.y,enemy[index].tamanho,enemy[index].tamanho);
 			}
 	        setcolor(RGB(0,255,255));
 	        setfillstyle(1,RGB(0,255,255));
