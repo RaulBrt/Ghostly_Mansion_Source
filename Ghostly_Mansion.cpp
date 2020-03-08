@@ -45,13 +45,19 @@ struct background{
 		};
 	pos pos;
 };
+int num = 10;
 player player;
 enemy enemy1;
 enemy enemy2;
 enemy enemy3;
 enemy enemy4;
 enemy enemy5;
-enemy enemy[5] = {enemy1,enemy2,enemy3,enemy4,enemy5};
+enemy enemy6;
+enemy enemy7;
+enemy enemy8;
+enemy enemy9;
+enemy enemy10;
+enemy enemy[10] = {enemy1,enemy2,enemy3,enemy4,enemy5,enemy6,enemy7,enemy8,enemy9,enemy10};
 background bac;
 int xpos=0;
 int ypos=0;
@@ -77,12 +83,14 @@ void hitbox(int x, int y, int angle, int centerx, int centery){
 }
 void spawnenemies(int enem){	
 	int chance = rand();
-	if (chance%100 == 0 && enemy[enem].spawned == 0){
-		enemy[enem].pos.relx = rand()%bac.larg-5;
-		enemy[enem].pos.rely = rand()%bac.alt-5;
+	if (chance%100 == 0){
+		enemy[enem].pos.relx = rand();
+		enemy[enem].pos.relx = enemy[enem].pos.relx%bac.larg-5;
+		enemy[enem].pos.rely = rand();
+		enemy[enem].pos.rely = enemy[enem].pos.rely%bac.alt-5;
     	enemy[enem].spawned = 1;
 	}
-	printf("Inimigo %d: posicao x: %d, posicao y: %d, spawn: %d\n",enem,enemy[enem].pos.relx,enemy[enem].pos.rely,enemy[enem].spawned);
+	//printf("Inimigo %d: posicao x: %d, posicao y: %d, spawn: %d\n",enem,enemy[enem].pos.relx,enemy[enem].pos.rely,enemy[enem].spawned);
 	
 }
 //========================================================
@@ -93,7 +101,7 @@ int main(){
     int done = 0;
     int ca,pg,index;
     double co;
-    for (index = 0;index < 5; index++){
+    for (index = 0;index < num; index++){
     	    enemy[index].tamanho = 5;
     	    enemy[index].spawned = 0;
 	}
@@ -118,13 +126,15 @@ int main(){
     		setactivepage(pg);
     		cleardevice();
     		//Spawn stuff=======================================================================================
-    		for(index = 0; index <5 ; index ++){
-    			spawnenemies(index);
+    		for(index = 0; index <num ; index ++){
+    			 if(enemy[index].spawned == 0){
+    			 	spawnenemies(index);
+				 }	
 			}
 	    	//Move stuff=======================================================================================
 	    	player.pos.relx = player.pos.x - bac.pos.x;
 	    	player.pos.rely = player.pos.y - bac.pos.y;
-	    	for(index = 0;index < 5; index++){
+	    	for(index = 0;index < num; index++){
 	    		enemy[index].pos.x = player.pos.x+(enemy[index].pos.rely-player.pos.relx);
 	    		enemy[index].pos.y = player.pos.y+(enemy[index].pos.rely-player.pos.rely);
 			}
@@ -142,10 +152,10 @@ int main(){
         		bac.pos.x-=5;
 			}
 			if(GetAsyncKeyState(VK_RIGHT) & 0x8000){
-        		player.pos.angle+=2;
+        		player.pos.angle+=5;
 			}
 			if(GetAsyncKeyState(VK_LEFT) & 0x8000){
-        		player.pos.angle-=2;
+        		player.pos.angle-=5;
 			}
 			if(player.pos.angle>359){
 	            player.pos.angle = 0;
@@ -159,7 +169,7 @@ int main(){
 				}
 			}	
 	        //Hit stuff=======================================================================================
-	        for(index = 0;index < 5; index++){
+	        for(index = 0;index < num; index++){
 		    	enemy[index].pos.angle = (int)(atan((float)(enemy[index].pos.y-player.pos.y)/(float)(enemy[index].pos.x-player.pos.x))*(180/3.14159265359));
 				if(enemy[index].pos.angle < 0){
 					enemy[index].pos.angle+=180;
@@ -189,7 +199,7 @@ int main(){
 	        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.alcance);
 	        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
 	        fillpoly(4,flash);
-	  		for(index = 0;index < 5; index++){
+	  		for(index = 0;index < num; index++){
 		        if(enemy[index].pos.x > -5 && enemy[index].pos.x < res[0]+5 && enemy[index].pos.y > -5 && enemy[index].pos.y < res[1]+5 && enemy[index].spawned == 1){
 		        	setcolor(RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
 		        	setfillstyle(1,RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
@@ -200,7 +210,7 @@ int main(){
 	        setfillstyle(1,RGB(0,255,255));
 	        fillellipse(player.pos.x,player.pos.y,10,10);
 	        setvisualpage(pg);
-	        delay(16);
+	        //delay(16);
 		}
 	}
 	printf("\n");
