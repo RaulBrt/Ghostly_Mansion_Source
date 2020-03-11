@@ -167,7 +167,7 @@ int main(){
 				 }	
 			}
 			for(index = 0; index <2 ; index ++){
-				chance=rand()%1;
+				chance=rand()%10;
 				if(battery[index].spawned == 0 && chance == 0){
 					battery[index].spawned = 1;
 					battery[index].relx = rand()%bac.larg;
@@ -224,7 +224,7 @@ int main(){
 				if(enemy[index].spawned == 1){
 					chance = rand()%5;
 					if (enemy[index].pos.relx-enemy[index].tamanho < 0 || enemy[index].pos.rely-enemy[index].tamanho < 0 || enemy[index].pos.relx+enemy[index].tamanho > bac.larg || enemy[index].pos.rely+enemy[index].tamanho > bac.alt){
-						enemy[index].pos.walkingangle += 90;
+						enemy[index].pos.walkingangle += 180;
 					}
 					else if (cicles%60 == 0 && chance == 0){
 						enemy[index].pos.walkingangle = rand()%360;
@@ -235,8 +235,10 @@ int main(){
 				}				
 			}
 			for(index=0;index<2;index++){
-				battery[index].x = bac.pos.x+battery[index].relx;
-	    		battery[index].y = bac.pos.y+battery[index].rely;
+				if(battery[index].spawned == true){
+					battery[index].x = bac.pos.x+battery[index].relx;
+	    			battery[index].y = bac.pos.y+battery[index].rely;
+				}
 			}
 	        //Hit stuff=======================================================================================
 	        for(index = 0;index < num; index++){
@@ -277,12 +279,12 @@ int main(){
 				}
 			}
 			for(index=0;index<2;index++){
-				if(player.pos.relx==battery[index].relx && player.pos.rely==battery[index].rely){
-					battery[index].spawned == 0;
-					battery[index].relx = NULL;
-					battery[index].rely = NULL;	
-					battery[index].x = NULL;
-	    			battery[index].y = NULL;
+				if(battery[index].spawned == true && battery[index].relx >= player.pos.relx-player.tamanho && battery[index].relx <= player.pos.relx+player.tamanho && battery[index].rely >= player.pos.rely-player.tamanho && battery[index].rely <= player.pos.rely+player.tamanho){
+					battery[index].spawned == false;
+					battery[index].relx = 0;
+					battery[index].rely = 0;	
+					battery[index].x = 0;
+	    			battery[index].y = 0;
 	    			player.lanterna.alcance+=50;
 				}
 			}
@@ -297,7 +299,7 @@ int main(){
 	        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
 	        fillpoly(4,flash);
 	  		for(index = 0;index < num; index++){
-		        if(enemy[index].pos.x > -5 && enemy[index].pos.x < res[0]+5 && enemy[index].pos.y > -5 && enemy[index].pos.y < res[1]+5 && enemy[index].spawned == 1){
+		        if(enemy[index].pos.x > - enemy[index].tamanho && enemy[index].pos.x < res[0]+enemy[index].tamanho && enemy[index].pos.y > -enemy[index].tamanho && enemy[index].pos.y < res[1]+enemy[index].tamanho && enemy[index].spawned == 1){
 		        	setcolor(RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
 		        	setfillstyle(1,RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
 		        	fillellipse(enemy[index].pos.x,enemy[index].pos.y,enemy[index].tamanho,enemy[index].tamanho);
@@ -306,7 +308,7 @@ int main(){
 			setcolor(RGB(255,0,255));
 	        setfillstyle(1,RGB(255,0,255));
 			for(index=0;index < 2; index++){
-				if(battery[index].spawned == 1){
+				if(battery[index].spawned == true){
 					fillellipse(battery[index].x,battery[index].y,battery[index].tamanho,battery[index].tamanho);	
 				}
 			}
@@ -329,7 +331,6 @@ int main(){
 				break;
 			}*/
 	        setvisualpage(pg);
-	        printf("%d\n",cicles);
 	        cicles++;
 	        if(cicles >= 65534){
 	        	cicles = 0;
