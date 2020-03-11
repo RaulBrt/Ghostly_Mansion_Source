@@ -4,10 +4,8 @@
 #include <graphics.h>
 #include <time.h>
 static double conv = (3.14159265359/180);
-int res[2] = {600,600};
-
+int res[2] = {1920,1080};
 //Classify stuff=======================================================
-
 struct player{
 	int tamanho,health,score;
 	bool key;
@@ -144,8 +142,8 @@ int main(){
 	}
 	key.tamanho = 5;
 	key.spawned = false;
-    bac.larg = 920;
-    bac.alt = 540;
+    bac.larg = 1920;
+    bac.alt = 1080;
     player.pos.x = (int)(res[0]/2);
     player.pos.y = (int)(res[1]/2);
     player.lanterna.alcance = 450;
@@ -179,7 +177,7 @@ int main(){
 				}
 			}
 			for(index = 0; index <2 ; index ++){
-				chance=rand()%10;
+				chance=rand()%100;
 				if(battery[index].spawned == 0 && chance == 0){
 					battery[index].spawned = 1;
 					battery[index].relx = rand()%bac.larg;
@@ -204,7 +202,7 @@ int main(){
 			}
 			if (player.key == true){
 				for (index = 0; index < num; index++){
-	    				enemy[index].spawned == false;
+	    				enemy[index].spawned = false;
 					}
 			}
 	    	//Move stuff=======================================================================================
@@ -359,7 +357,7 @@ int main(){
 	        setfillstyle(1,RGB(0,255,255));
 	        fillellipse(player.pos.x,player.pos.y,player.tamanho,player.tamanho);
 	        //Win/Lose Stuff=========================================================================================
-	        if(player.health<=-1000){
+	        if(player.health<=0){
 				done = 1;
 				cleardevice();
 				setvisualpage(pg);
