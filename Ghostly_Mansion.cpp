@@ -8,14 +8,11 @@ int res[2] = {1920,1080};
 //Classify stuff=======================================================
 struct player{
 	int tamanho,health,score;
-	bool key;
+	bool key,moving;
+	char atlas[8][8][15];
     struct pos{
-        int x;
-        int y;
-        int angle;
+        int x,y,angle,relx,rely,direction;
         int hit[2];
-        int relx;
-		int rely;
     };
     struct lanterna{
     	int angle,alcance,bateria;
@@ -149,7 +146,7 @@ int main(){
     player.lanterna.alcance = 450;
     player.lanterna.angle = 30;
     player.pos.angle = 270;
-    player.tamanho = 10;
+    player.tamanho = 64;
     player.key = false;
     bac.pos.x = player.pos.x-((int)bac.larg/2);
     bac.pos.y = player.pos.y-((int)bac.alt/2);
@@ -161,6 +158,14 @@ int main(){
     int flash[8];
     int chance;
 	unsigned int cicles = 0;
+	player.atlas[0] = {"Images/w1.bmp","Images/w2.bmp","Images/w3.bmp","Images/w4.bmp","Images/w5.bmp","Images/w6.bmp","Images/w7.bmp","Images/w8.bmp"};
+	player.atlas[1] = {"Images/wd1.bmp","Images/wd2.bmp","Images/wd3.bmp","Images/wd4.bmp","Images/wd5.bmp","Images/wd6.bmp","Images/wd7.bmp","Images/wd8.bmp"};
+	player.atlas[2] = {"Images/d1.bmp","Images/d2.bmp","Images/d3.bmp","Images/d4.bmp","Images/d5.bmp","Images/d6.bmp","Images/d7.bmp","Images/d8.bmp"};
+	player.atlas[3] = {"Images/sd1.bmp","Images/sd2.bmp","Images/sd3.bmp","Images/sd4.bmp","Images/sd5.bmp","Images/sd6.bmp","Images/sd7.bmp","Images/sd8.bmp"};
+	player.atlas[4] = {"Images/s1.bmp","Images/s2.bmp","Images/s3.bmp","Images/s4.bmp","Images/s5.bmp","Images/s6.bmp","Images/s7.bmp","Images/s8.bmp"};
+	player.atlas[5] = {"Images/sa1.bmp","Images/sa2.bmp","Images/sa3.bmp","Images/sa4.bmp","Images/sa5.bmp","Images/sa6.bmp","Images/sa7.bmp","Images/sa8.bmp"};
+	player.atlas[6] = {"Images/a1.bmp","Images/a2.bmp","Images/a3.bmp","Images/a4.bmp","Images/a5.bmp","Images/a6.bmp","Images/a7.bmp","Images/a8.bmp"};
+	player.atlas[7] = {"Images/wa1.bmp","Images/wa2.bmp","Images/wa3.bmp","Images/wa4.bmp","Images/wa5.bmp","Images/wa6.bmp","Images/wa7.bmp","Images/wa8.bmp"};
 	//Play stuff===========================================================================================
 	cleardevice();
 	getch();
@@ -186,7 +191,7 @@ int main(){
 	    			battery[index].y = bac.pos.y+battery[index].rely;
 				}
 			}
-			if(player.score >= 1 && key.spawned == false){
+			if(player.score >= 30 && key.spawned == false){
 				key.spawned = true;
 				player.score = 0;
 				key.relx = rand()%bac.larg;
@@ -208,6 +213,7 @@ int main(){
 	    	//Move stuff=======================================================================================
 	    	player.pos.relx = player.pos.x - bac.pos.x;
 	    	player.pos.rely = player.pos.y - bac.pos.y;
+	    	player.moving = false;
 	    	for(index = 0;index < num; index++){
 	    		enemy[index].pos.x = player.pos.x+(int)(enemy[index].pos.relx-player.pos.relx);
 	    		enemy[index].pos.y = player.pos.y+(int)(enemy[index].pos.rely-player.pos.rely);
@@ -215,15 +221,19 @@ int main(){
 	    	
       		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.rely-player.tamanho > 0){
 	        	bac.pos.y+=5;
+	        	player.moving = true;
 			}
 			if((GetAsyncKeyState('A') & 0x8000) && player.pos.relx-player.tamanho > 0){
 	       		bac.pos.x+=5;
+	       		player.moving = true;
 			}
  			if((GetAsyncKeyState('S') & 0x8000) && player.pos.rely+player.tamanho < bac.alt){
         		bac.pos.y-=5;
+        		player.moving = true;
 			}
 			if((GetAsyncKeyState('D') & 0x8000) && player.pos.relx+player.tamanho < bac.larg){
         		bac.pos.x-=5;
+        		player.moving = true;
 			}
 			ca = mousex()-player.pos.x;
 			co = mousey()-player.pos.y;
@@ -243,6 +253,30 @@ int main(){
 			if(player.pos.angle<0){
 	            player.pos.angle = 359;
 	        }
+	        if(player.pos.angle > 69 && player.pos.angle <= 112){
+				player.pos.direction = 4;
+			}
+			else if(player.pos.angle > 112 && player.pos.angle <= 157){
+				player.pos.direction = 5;
+			}
+			else if(player.pos.angle > 157 && player.pos.angle <= 202){
+				player.pos.direction = 6;
+			}
+			else if(player.pos.angle > 202 && player.pos.angle <= 247){
+				player.pos.direction = 7;
+			}
+			else if(player.pos.angle > 247 && player.pos.angle <= 292){
+				player.pos.direction = 0;
+			}
+			else if(player.pos.angle > 292 && player.pos.angle <= 337){
+				player.pos.direction = 1;
+			}			
+			else if((player.pos.angle > 337 && player.pos.angle <= 360) || (player.pos.angle > 0 && player.pos.angle <= 23)){
+				player.pos.direction = 2;
+			}
+			else if(player.pos.angle > 23 && player.pos.angle <= 68){
+				player.pos.direction = 3;
+			}
 			for(index = 0; index < num; index ++){
 				if(enemy[index].spawned == 1){
 					chance = rand()%5;
@@ -353,9 +387,12 @@ int main(){
 			if(key.spawned == true){
 				fillellipse(key.x,key.y,key.tamanho,key.tamanho);	
 			}
-	        setcolor(RGB(0,255,255));
-	        setfillstyle(1,RGB(0,255,255));
-	        fillellipse(player.pos.x,player.pos.y,player.tamanho,player.tamanho);
+			if(player.moving){
+				readimagefile(player.atlas[player.pos.direction][cicles%8],player.pos.x-(player.tamanho/2),player.pos.y-(player.tamanho/2),player.pos.x+(player.tamanho/2),player.pos.y+(player.tamanho/2));
+			}
+			else{
+				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho/2),player.pos.y-(player.tamanho/2),player.pos.x+(player.tamanho/2),player.pos.y+(player.tamanho/2));
+			}
 	        //Win/Lose Stuff=========================================================================================
 	        if(player.health<=0){
 				done = 1;
