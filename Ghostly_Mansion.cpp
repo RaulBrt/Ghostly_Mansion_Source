@@ -1,91 +1,86 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <graphics.h>
-#include <time.h>
-static double conv = (3.14159265359/180);
-int res[2] = {1920,1080};
-//Classify stuff=======================================================
-struct player{
-	int tamanho,health,score;
-	bool key,moving;
-	char atlas[8][8][15];
-    struct pos{
-        int x,y,angle,relx,rely,direction;
-        int hit[2];
+#include <stdlib.h> 	//
+#include <stdio.h>		//
+#include <math.h>		//Bibliotecas utilizadas
+#include <graphics.h>	//
+#include <time.h>		//
+static double conv = (3.14159265359/180); 	//Fator de conversão de graus para radianos
+int res[2] = {1920,1080}; 					//Tamanho da tela em pixeis
+//Structfy stuff=======================================================
+struct player{ 										//Struct para organizar as variaveis do jogador
+	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
+	bool key,moving;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
+	char atlas[8][8][15];								//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
+    struct pos{											//Struct para organizar as variaveis de posição do jogador
+        int x,y,angle,relx,rely,direction;					//Variaveis para guardar as coordenadas x,y na tela, o angulo em que o jogador está olhando, as coordenadas x,y em relação ao canto superior esquerdo do mapa e o indice da direção que o jogador está olhando
     };
-    struct lanterna{
-    	int angle,alcance,bateria;
+    struct lanterna{									//Struct para organizar as variaveis da lanterna do jogador
+    	int angle,alcance,bateria;								//Variaveis para guardar o angulo formado pelo feixe de luz, a distancia e a quantidade de "vida" do jogador/lanterna
 	};
-    pos pos;
-    lanterna lanterna;
+    pos pos;											//Criar o objeto pos que referencia a struct pos
+    lanterna lanterna;									//Criar o objeto lanterna que referencia a struct lanterna
 };
-struct enemy{
-		int tamanho,health;
+struct enemy{										//Struct para organizar as variaveis dos inimigos
+		int tamanho,health;								//Variaveis para guardar o tamanho da imagem e a vida do inimigo
 		int color[3];
-		float speed;
-		bool spawned;
-		struct pos{
-				int x,y,angle,hitangle,walkingangle;
-				int hit[2];
-				float relx,rely;
+		float speed;									//Variavel para guardar a velocidade que o inimigo anda
+		bool spawned;									//Variavel para saber se o inimigo já está na tela
+		struct pos{										//Struct para organizar as variaveis de posição do inimigo
+				int x,y,angle,hitangle,walkingangle;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
+				int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
+				float relx,rely;							//Variaveis para guardar as coordenadas x,y em relação ao canto superior esquerdo do mapa
 		};
-	pos pos;
+	pos pos;											//Criar o objeto pos que referencia a struct pos
 };
-struct background{
-		int larg;
-		int alt;
-		struct pos{
-				int x;
-				int y;
+struct background{									//Struct para organizar as variaveis do background
+		int alt,larg;									//Variaveis para guardar as dimenções x,y da imagem de fundo em pixeis
+		struct pos{										//Struct para organizar as coordenadas x,y do background
+				int x,y;									//Variaveis para guardar as coordenadas x,y do background
 		};
-	pos pos;
+	pos pos;											//Criar o objeto pos que referencia a struct pos
 };
-struct battery{
-	bool spawned;
-	int tamanho;
-	int x,y,relx,rely;
+struct battery{										//Struct para organizar as variaveis das baterias
+	bool spawned;										//Variavel para se se a bateria já está na tela
+	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da bateria
 };
-struct key{
-	bool spawned;
-	int tamanho;
-	int x,y,relx,rely;
+struct key{											//Struct para organizar as variaveis da chave
+	bool spawned;										//Variavel para se se a chave já está na tela
+	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da chave
 };
-int num = 20;
-player player;
-enemy enemy1;
-enemy enemy2;
-enemy enemy3;
-enemy enemy4;
-enemy enemy5;
-enemy enemy6;
-enemy enemy7;
-enemy enemy8;
-enemy enemy9;
-enemy enemy10;
-enemy enemy11;
-enemy enemy12;
-enemy enemy13;
-enemy enemy14;
-enemy enemy15;
-enemy enemy16;
-enemy enemy17;
-enemy enemy18;
-enemy enemy19;
-enemy enemy20;
-enemy enemy[20] = {enemy1,enemy2,enemy3,enemy4,enemy5,enemy6,enemy7,enemy8,enemy9,enemy10,enemy11,enemy12,enemy13,enemy14,enemy15,enemy16,enemy17,enemy18,enemy19,enemy20};
-battery battery1;
-battery battery2;
-battery battery[2] = {battery1,battery2};
-key key;
-background bac;
-int xpos=0;
-int ypos=0;
-int posx = 0;
-int posy = 0;
-int hitx = 0;
-int hity = 0;
-//=======================================================
+int num = 20;										//Variavel para guardar o numero maximo de inimigos na tela ao mesmo tempo
+player player;									//Criar o objeto player que referencia a struct player
+enemy enemy1;										//<=
+enemy enemy2;										//<=										
+enemy enemy3;										//<=
+enemy enemy4;										//<=
+enemy enemy5;										//<=
+enemy enemy6;										//<=
+enemy enemy7;										//<=
+enemy enemy8;										//<=
+enemy enemy9;										//<=
+enemy enemy10;										//<= Criar os objetos dos inimigos que 
+enemy enemy11;										//<= referenciam a struct enemy
+enemy enemy12;										//<=
+enemy enemy13;										//<=
+enemy enemy14;										//<=
+enemy enemy15;										//<=
+enemy enemy16;										//<=
+enemy enemy17;										//<=
+enemy enemy18;										//<=
+enemy enemy19;										//<=
+enemy enemy20;										//<=
+enemy enemy[20] = {enemy1,enemy2,enemy3,enemy4,enemy5,enemy6,enemy7,enemy8,enemy9,enemy10,enemy11,enemy12,enemy13,enemy14,enemy15,enemy16,enemy17,enemy18,enemy19,enemy20}; //Array para guardar os inimigos
+battery battery1;								//<= Criar os objetos das baterias que
+battery battery2;								//<= referenciam a struct battery
+battery battery[2] = {battery1,battery2};			//Array para guardar as baterias
+key key;										//Criar o objeto key que referencia a struct key
+background bac;										//Criar o objeto bac que referencia a struct background
+int xpos = 0; 						//<=
+int ypos = 0;						//<= Variaveis para guardar os vertices do
+int posx = 0;						//<= polgono da lanterna
+int posy = 0;						//<=
+int hitx = 0;					//<= Variaveis para guardar momentaneamente
+int hity = 0;					//<= a posição da hitbox do inimigo
+//Make stuff function =======================================================
 void screenflashlight(int angle,int centerx,int centery,int radius,int flashangle){
 	double nangle=angle*(conv);
 	double mangle=(angle-flashangle)*(conv);
@@ -120,7 +115,7 @@ void spawnenemies(int enem){
 	}
 	//printf("Inimigo %d: posicao x: %d, posicao y: %d, spawn: %d\n",enem,enemy[enem].pos.relx,enemy[enem].pos.rely,enemy[enem].spawned);
 }
-//========================================================
+//Actual code stuff========================================================
 int main(){
 	srand((unsigned)time(NULL));
 	//Define stuff===========================================================================================
@@ -146,7 +141,7 @@ int main(){
     player.lanterna.alcance = 450;
     player.lanterna.angle = 30;
     player.pos.angle = 270;
-    player.tamanho = 64;
+    player.tamanho = 32;
     player.key = false;
     bac.pos.x = player.pos.x-((int)bac.larg/2);
     bac.pos.y = player.pos.y-((int)bac.alt/2);
@@ -314,8 +309,8 @@ int main(){
 				hitbox(enemy[index].pos.x,enemy[index].pos.y,enemy[index].pos.hitangle,player.pos.x,player.pos.y);
 				enemy[index].pos.hit[0] = hitx;
 				enemy[index].pos.hit[1] = hity;
-				player.pos.hit[0] = player.pos.x+player.lanterna.alcance;
-				player.pos.hit[1] = player.pos.y;
+				//player.pos.hit[0] = player.pos.x+player.lanterna.alcance;
+				//player.pos.hit[1] = player.pos.y;
 				enemy[index].color = {0,255,0};
 				if(enemy[index].pos.hit[0]>player.pos.x && (enemy[index].pos.hitangle < 90 || enemy[index].pos.hitangle > 270) && enemy[index].spawned == 1){
 		   			ca = (enemy[index].pos.hit[0]-player.pos.x);
@@ -334,7 +329,9 @@ int main(){
 				}
 				if(enemy[index].pos.x+enemy[index].tamanho>=player.pos.x-player.tamanho && enemy[index].pos.x-enemy[index].tamanho<=player.pos.x+player.tamanho){
 					if(enemy[index].pos.y+enemy[index].tamanho>=player.pos.y-player.tamanho && enemy[index].pos.y-enemy[index].tamanho<=player.pos.y+player.tamanho){
-						player.health-=1;
+						if(player.lanterna.alcance > 0){
+								player.lanterna.alcance-=50;
+						}
 						//printf("Vida: %d\n",player.health);
 					}
 				}
@@ -388,13 +385,13 @@ int main(){
 				fillellipse(key.x,key.y,key.tamanho,key.tamanho);	
 			}
 			if(player.moving){
-				readimagefile(player.atlas[player.pos.direction][cicles%8],player.pos.x-(player.tamanho/2),player.pos.y-(player.tamanho/2),player.pos.x+(player.tamanho/2),player.pos.y+(player.tamanho/2));
+				readimagefile(player.atlas[player.pos.direction][cicles%8],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
 			}
 			else{
-				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho/2),player.pos.y-(player.tamanho/2),player.pos.x+(player.tamanho/2),player.pos.y+(player.tamanho/2));
+				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
 			}
 	        //Win/Lose Stuff=========================================================================================
-	        if(player.health<=0){
+	        if(player.health<=0 || player.lanterna.alcance <= 0){
 				done = 1;
 				cleardevice();
 				setvisualpage(pg);
