@@ -161,256 +161,297 @@ int main(){
 	player.atlas[5] = {"Images/sa1.bmp","Images/sa2.bmp","Images/sa3.bmp","Images/sa4.bmp","Images/sa5.bmp","Images/sa6.bmp","Images/sa7.bmp","Images/sa8.bmp"};
 	player.atlas[6] = {"Images/a1.bmp","Images/a2.bmp","Images/a3.bmp","Images/a4.bmp","Images/a5.bmp","Images/a6.bmp","Images/a7.bmp","Images/a8.bmp"};
 	player.atlas[7] = {"Images/wa1.bmp","Images/wa2.bmp","Images/wa3.bmp","Images/wa4.bmp","Images/wa5.bmp","Images/wa6.bmp","Images/wa7.bmp","Images/wa8.bmp"};
+	int fase = 0;
 	//Play stuff===========================================================================================
 	cleardevice();
-	getch();
     while(done == 0){
-    	for(pg = 1; pg<=2;pg++){
-    		setactivepage(pg);
-    		cleardevice();
-    		//Spawn stuff=======================================================================================
-    		if(player.key == false){
-    			for(index = 0; index <num ; index ++){
-	    			 if(enemy[index].spawned == 0){
-	    			 	spawnenemies(index);
-					 }	
-				}
-			}
-			for(index = 0; index <2 ; index ++){
-				chance=rand()%100;
-				if(battery[index].spawned == 0 && chance == 0){
-					battery[index].spawned = 1;
-					battery[index].relx = rand()%bac.larg;
-					battery[index].rely = rand()%bac.alt;	
-					battery[index].x = bac.pos.x+battery[index].relx;
-	    			battery[index].y = bac.pos.y+battery[index].rely;
-				}
-			}
-			if(player.score >= 30 && key.spawned == false){
-				key.spawned = true;
-				player.score = 0;
-				key.relx = rand()%bac.larg;
-			 	key.rely = rand()%bac.alt;
-				key.x = bac.pos.x+key.relx;
-    			key.y = bac.pos.y+key.rely;
-				}	
-			//Mechanics Stuff==================================================================================
-			if(cicles%5== 0){
-				if(player.lanterna.alcance>=0){
-					player.lanterna.alcance-=1;
-				}
-			}
-			if (player.key == true){
-				for (index = 0; index < num; index++){
-	    				enemy[index].spawned = false;
-					}
-			}
-	    	//Move stuff=======================================================================================
-	    	player.pos.relx = player.pos.x - bac.pos.x;
-	    	player.pos.rely = player.pos.y - bac.pos.y;
-	    	player.moving = false;
-	    	for(index = 0;index < num; index++){
-	    		enemy[index].pos.x = player.pos.x+(int)(enemy[index].pos.relx-player.pos.relx);
-	    		enemy[index].pos.y = player.pos.y+(int)(enemy[index].pos.rely-player.pos.rely);
-			}
-	    	
-      		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.rely-player.tamanho > 0){
-	        	bac.pos.y+=5;
-	        	player.moving = true;
-			}
-			if((GetAsyncKeyState('A') & 0x8000) && player.pos.relx-player.tamanho > 0){
-	       		bac.pos.x+=5;
-	       		player.moving = true;
-			}
- 			if((GetAsyncKeyState('S') & 0x8000) && player.pos.rely+player.tamanho < bac.alt){
-        		bac.pos.y-=5;
-        		player.moving = true;
-			}
-			if((GetAsyncKeyState('D') & 0x8000) && player.pos.relx+player.tamanho < bac.larg){
-        		bac.pos.x-=5;
-        		player.moving = true;
-			}
-			ca = mousex()-player.pos.x;
-			co = mousey()-player.pos.y;
-			player.pos.angle = (int)(atan(co/ca)*(180/3.14159265359));
-			if (player.pos.angle<0){
-				player.pos.angle+=180;
-			}
-			if(mousey()<player.pos.y){
-				player.pos.angle+=180;
-			}
-			if(mousex()<player.pos.x && mousey() == player.pos.y){
-				player.pos.angle == 180;
-			}
-			if(player.pos.angle>359){
-	            player.pos.angle = 0;
-	        }
-			if(player.pos.angle<0){
-	            player.pos.angle = 359;
-	        }
-	        if(player.pos.angle > 69 && player.pos.angle <= 112){
-				player.pos.direction = 4;
-			}
-			else if(player.pos.angle > 112 && player.pos.angle <= 157){
-				player.pos.direction = 5;
-			}
-			else if(player.pos.angle > 157 && player.pos.angle <= 202){
-				player.pos.direction = 6;
-			}
-			else if(player.pos.angle > 202 && player.pos.angle <= 247){
-				player.pos.direction = 7;
-			}
-			else if(player.pos.angle > 247 && player.pos.angle <= 292){
-				player.pos.direction = 0;
-			}
-			else if(player.pos.angle > 292 && player.pos.angle <= 337){
-				player.pos.direction = 1;
-			}			
-			else if((player.pos.angle > 337 && player.pos.angle <= 360) || (player.pos.angle > 0 && player.pos.angle <= 23)){
-				player.pos.direction = 2;
-			}
-			else if(player.pos.angle > 23 && player.pos.angle <= 68){
-				player.pos.direction = 3;
-			}
-			for(index = 0; index < num; index ++){
-				if(enemy[index].spawned == 1){
-					chance = rand()%5;
-					if (enemy[index].pos.relx-enemy[index].tamanho < 0 || enemy[index].pos.rely-enemy[index].tamanho < 0 || enemy[index].pos.relx+enemy[index].tamanho > bac.larg || enemy[index].pos.rely+enemy[index].tamanho > bac.alt){
-						enemy[index].pos.walkingangle += 180;
-					}
-					else if (cicles%60 == 0 && chance == 0){
-						enemy[index].pos.walkingangle = rand()%360;
-					}
-				enemy[index].pos.relx+=cos(enemy[index].pos.walkingangle*conv)*(int)enemy[index].speed;
-		       	enemy[index].pos.rely+=sin(enemy[index].pos.walkingangle*conv)*(int)enemy[index].speed;
-		       	//enemy[index].speed+=1;
-				}				
-			}
-			for(index=0;index<2;index++){
-				if(battery[index].spawned == true){
-					battery[index].x = bac.pos.x+battery[index].relx;
-	    			battery[index].y = bac.pos.y+battery[index].rely;
-				}
-			}
-			if(key.spawned == true){
-					key.x = bac.pos.x+key.relx;
-	    			key.y = bac.pos.y+key.rely;
-				}
-	        //Hit stuff=======================================================================================
-	        for(index = 0;index < num; index++){
-		    	enemy[index].pos.angle = (int)(atan((float)(enemy[index].pos.y-player.pos.y)/(float)(enemy[index].pos.x-player.pos.x))*(180/3.14159265359));
-				if(enemy[index].pos.angle < 0){
-					enemy[index].pos.angle+=180;
-				}	
-				if(enemy[index].pos.y<player.pos.y){
-					enemy[index].pos.angle+=180;
-				}
-				enemy[index].pos.hitangle = enemy[index].pos.angle-player.pos.angle;
-				hitbox(enemy[index].pos.x,enemy[index].pos.y,enemy[index].pos.hitangle,player.pos.x,player.pos.y);
-				enemy[index].pos.hit[0] = hitx;
-				enemy[index].pos.hit[1] = hity;
-				//player.pos.hit[0] = player.pos.x+player.lanterna.alcance;
-				//player.pos.hit[1] = player.pos.y;
-				enemy[index].color = {0,255,0};
-				if(enemy[index].pos.hit[0]>player.pos.x && (enemy[index].pos.hitangle < 90 || enemy[index].pos.hitangle > 270) && enemy[index].spawned == 1){
-		   			ca = (enemy[index].pos.hit[0]-player.pos.x);
-		   	    	co = ca*tan((player.lanterna.angle/2)*conv);
-		   	    	if (abs(enemy[index].pos.hit[1]-player.pos.y)<co && sqrt(((enemy[index].pos.x-player.pos.x)*(enemy[index].pos.x-player.pos.x))+((enemy[index].pos.y-player.pos.y)*(enemy[index].pos.y-player.pos.y)))<=player.lanterna.alcance){
-		   				enemy[index].color = {255,0,0};
-		   				enemy[index].health -= (int)((abs(100/co))+(abs(100/ca)));
-		   			}
-		        }
-		        if(enemy[index].health < 0){
-		        	enemy[index].spawned = false;
-		        	enemy[index].health = NULL;
-		        	player.score+=1;
-		        	printf("Score: %d\n",player.score);
-		        	
-				}
-				if(enemy[index].pos.x+enemy[index].tamanho>=player.pos.x-player.tamanho && enemy[index].pos.x-enemy[index].tamanho<=player.pos.x+player.tamanho){
-					if(enemy[index].pos.y+enemy[index].tamanho>=player.pos.y-player.tamanho && enemy[index].pos.y-enemy[index].tamanho<=player.pos.y+player.tamanho){
-						if(player.lanterna.alcance > 0){
-								player.lanterna.alcance-=50;
+    	switch (fase){
+		
+	    	case 0:
+	    		printf("Menu\n");
+	    		delay(1000);
+	    		printf("Precione a qualquer tecla para jogar...\n");
+	    		getch();
+	    		fase= 1;
+	    	case 1:
+	    		printf("Primeira cutscene...\n");
+	    		delay(5000);
+	    		fase = 2;
+	    	case 2:
+	    		while(!done){
+	    			for(pg = 1; pg<=2;pg++){
+		    		setactivepage(pg);
+		    		cleardevice();
+		    		//Spawn stuff=======================================================================================
+		    		if(player.key == false){
+		    			for(index = 0; index <num ; index ++){
+			    			 if(enemy[index].spawned == 0){
+			    			 	spawnenemies(index);
+							 }	
 						}
-						//printf("Vida: %d\n",player.health);
+					}
+					for(index = 0; index <2 ; index ++){
+						chance=rand()%100;
+						if(battery[index].spawned == 0 && chance == 0){
+							battery[index].spawned = 1;
+							battery[index].relx = rand()%bac.larg;
+							battery[index].rely = rand()%bac.alt;	
+							battery[index].x = bac.pos.x+battery[index].relx;
+			    			battery[index].y = bac.pos.y+battery[index].rely;
+						}
+					}
+					if(player.score >= 30 && key.spawned == false){
+						key.spawned = true;
+						player.score = 0;
+						key.relx = rand()%bac.larg;
+					 	key.rely = rand()%bac.alt;
+						key.x = bac.pos.x+key.relx;
+		    			key.y = bac.pos.y+key.rely;
+						}	
+					//Mechanics Stuff==================================================================================
+					if(cicles%5== 0){
+						if(player.lanterna.alcance>=0){
+							player.lanterna.alcance-=1;
+						}
+					}
+					if (player.key == true){
+						for (index = 0; index < num; index++){
+			    				enemy[index].spawned = false;
+							}
+					}
+			    	//Move stuff=======================================================================================
+			    	player.pos.relx = player.pos.x - bac.pos.x;
+			    	player.pos.rely = player.pos.y - bac.pos.y;
+			    	player.moving = false;
+			    	for(index = 0;index < num; index++){
+			    		enemy[index].pos.x = player.pos.x+(int)(enemy[index].pos.relx-player.pos.relx);
+			    		enemy[index].pos.y = player.pos.y+(int)(enemy[index].pos.rely-player.pos.rely);
+					}
+			    	
+		      		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.rely-player.tamanho > 0){
+			        	bac.pos.y+=5;
+			        	player.moving = true;
+					}
+					if((GetAsyncKeyState('A') & 0x8000) && player.pos.relx-player.tamanho > 0){
+			       		bac.pos.x+=5;
+			       		player.moving = true;
+					}
+		 			if((GetAsyncKeyState('S') & 0x8000) && player.pos.rely+player.tamanho < bac.alt){
+		        		bac.pos.y-=5;
+		        		player.moving = true;
+					}
+					if((GetAsyncKeyState('D') & 0x8000) && player.pos.relx+player.tamanho < bac.larg){
+		        		bac.pos.x-=5;
+		        		player.moving = true;
+					}
+					ca = mousex()-player.pos.x;
+					co = mousey()-player.pos.y;
+					player.pos.angle = (int)(atan(co/ca)*(180/3.14159265359));
+					if (player.pos.angle<0){
+						player.pos.angle+=180;
+					}
+					if(mousey()<player.pos.y){
+						player.pos.angle+=180;
+					}
+					if(mousex()<player.pos.x && mousey() == player.pos.y){
+						player.pos.angle == 180;
+					}
+					if(player.pos.angle>359){
+			            player.pos.angle = 0;
+			        }
+					if(player.pos.angle<0){
+			            player.pos.angle = 359;
+			        }
+			        if(player.pos.angle > 69 && player.pos.angle <= 112){
+						player.pos.direction = 4;
+					}
+					else if(player.pos.angle > 112 && player.pos.angle <= 157){
+						player.pos.direction = 5;
+					}
+					else if(player.pos.angle > 157 && player.pos.angle <= 202){
+						player.pos.direction = 6;
+					}
+					else if(player.pos.angle > 202 && player.pos.angle <= 247){
+						player.pos.direction = 7;
+					}
+					else if(player.pos.angle > 247 && player.pos.angle <= 292){
+						player.pos.direction = 0;
+					}
+					else if(player.pos.angle > 292 && player.pos.angle <= 337){
+						player.pos.direction = 1;
+					}			
+					else if((player.pos.angle > 337 && player.pos.angle <= 360) || (player.pos.angle > 0 && player.pos.angle <= 23)){
+						player.pos.direction = 2;
+					}
+					else if(player.pos.angle > 23 && player.pos.angle <= 68){
+						player.pos.direction = 3;
+					}
+					for(index = 0; index < num; index ++){
+						if(enemy[index].spawned == 1){
+							chance = rand()%5;
+							if (enemy[index].pos.relx-enemy[index].tamanho < 0 || enemy[index].pos.rely-enemy[index].tamanho < 0 || enemy[index].pos.relx+enemy[index].tamanho > bac.larg || enemy[index].pos.rely+enemy[index].tamanho > bac.alt){
+								enemy[index].pos.walkingangle += 180;
+							}
+							else if (cicles%60 == 0 && chance == 0){
+								enemy[index].pos.walkingangle = rand()%360;
+							}
+						enemy[index].pos.relx+=cos(enemy[index].pos.walkingangle*conv)*(int)enemy[index].speed;
+				       	enemy[index].pos.rely+=sin(enemy[index].pos.walkingangle*conv)*(int)enemy[index].speed;
+				       	//enemy[index].speed+=1;
+						}				
+					}
+					for(index=0;index<2;index++){
+						if(battery[index].spawned == true){
+							battery[index].x = bac.pos.x+battery[index].relx;
+			    			battery[index].y = bac.pos.y+battery[index].rely;
+						}
+					}
+					if(key.spawned == true){
+							key.x = bac.pos.x+key.relx;
+			    			key.y = bac.pos.y+key.rely;
+						}
+			        //Hit stuff=======================================================================================
+			        for(index = 0;index < num; index++){
+				    	enemy[index].pos.angle = (int)(atan((float)(enemy[index].pos.y-player.pos.y)/(float)(enemy[index].pos.x-player.pos.x))*(180/3.14159265359));
+						if(enemy[index].pos.angle < 0){
+							enemy[index].pos.angle+=180;
+						}	
+						if(enemy[index].pos.y<player.pos.y){
+							enemy[index].pos.angle+=180;
+						}
+						enemy[index].pos.hitangle = enemy[index].pos.angle-player.pos.angle;
+						hitbox(enemy[index].pos.x,enemy[index].pos.y,enemy[index].pos.hitangle,player.pos.x,player.pos.y);
+						enemy[index].pos.hit[0] = hitx;
+						enemy[index].pos.hit[1] = hity;
+						//player.pos.hit[0] = player.pos.x+player.lanterna.alcance;
+						//player.pos.hit[1] = player.pos.y;
+						enemy[index].color = {0,255,0};
+						if(enemy[index].pos.hit[0]>player.pos.x && (enemy[index].pos.hitangle < 90 || enemy[index].pos.hitangle > 270) && enemy[index].spawned == 1){
+				   			ca = (enemy[index].pos.hit[0]-player.pos.x);
+				   	    	co = ca*tan((player.lanterna.angle/2)*conv);
+				   	    	if (abs(enemy[index].pos.hit[1]-player.pos.y)<co && sqrt(((enemy[index].pos.x-player.pos.x)*(enemy[index].pos.x-player.pos.x))+((enemy[index].pos.y-player.pos.y)*(enemy[index].pos.y-player.pos.y)))<=player.lanterna.alcance){
+				   				enemy[index].color = {255,0,0};
+				   				enemy[index].health -= (int)((abs(100/co))+(abs(100/ca)));
+				   			}
+				        }
+				        if(enemy[index].health < 0){
+				        	enemy[index].spawned = false;
+				        	enemy[index].health = NULL;
+				        	player.score+=1;
+				        	printf("Score: %d\n",player.score);
+				        	
+						}
+						if(enemy[index].pos.x+enemy[index].tamanho>=player.pos.x-player.tamanho && enemy[index].pos.x-enemy[index].tamanho<=player.pos.x+player.tamanho){
+							if(enemy[index].pos.y+enemy[index].tamanho>=player.pos.y-player.tamanho && enemy[index].pos.y-enemy[index].tamanho<=player.pos.y+player.tamanho){
+								if(player.lanterna.alcance > 0){
+										player.lanterna.alcance-=50;
+								}
+								//printf("Vida: %d\n",player.health);
+							}
+						}
+					}
+					for(index=0;index<2;index++){
+						if(battery[index].spawned == true && battery[index].relx >= player.pos.relx-player.tamanho && battery[index].relx <= player.pos.relx+player.tamanho && battery[index].rely >= player.pos.rely-player.tamanho && battery[index].rely <= player.pos.rely+player.tamanho){
+							battery[index].spawned = false;
+							battery[index].relx = 0;
+							battery[index].rely = 0;	
+							battery[index].x = 0;
+			    			battery[index].y = 0;
+			    			player.lanterna.alcance+=50;
+			    			printf("Spawn bateria %d: %d\n",index,battery[index].spawned);
+						}
+					}
+					if(player.lanterna.alcance>450){
+			    		player.lanterna.alcance=450;
+					}
+					if(key.spawned == true && key.relx >= player.pos.relx-player.tamanho && key.relx <= player.pos.relx+player.tamanho && key.rely >= player.pos.rely-player.tamanho && key.rely <= player.pos.rely+player.tamanho){
+							key.spawned = false;
+							key.relx = 0;
+							key.rely = 0;	
+							key.x = 0;
+			    			key.y = 0;
+			    			player.key = true;
+						}
+			        //Draw stuff=======================================================================================
+			        readimagefile("Images/teste.bmp",bac.pos.x,bac.pos.y,bac.larg+bac.pos.x,bac.alt+bac.pos.y);
+			        setcolor(RGB(255,255,0));
+			        setfillstyle(1,RGB(255,255,0));
+			        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
+			        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
+			        fillpoly(4,flash);
+			  		for(index = 0;index < num; index++){
+				        if(enemy[index].pos.x > - enemy[index].tamanho && enemy[index].pos.x < res[0]+enemy[index].tamanho && enemy[index].pos.y > -enemy[index].tamanho && enemy[index].pos.y < res[1]+enemy[index].tamanho && enemy[index].spawned == 1){
+				        	setcolor(RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
+				        	setfillstyle(1,RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
+				        	fillellipse(enemy[index].pos.x,enemy[index].pos.y,enemy[index].tamanho,enemy[index].tamanho);
+						}
+					}
+					setcolor(RGB(255,0,255));
+			        setfillstyle(1,RGB(255,0,255));
+					for(index=0;index < 2; index++){
+						if(battery[index].spawned == true){
+							fillellipse(battery[index].x,battery[index].y,battery[index].tamanho,battery[index].tamanho);	
+						}
+					}
+					setcolor(RGB(0,0,255));
+			        setfillstyle(1,RGB(0,0,255));
+					if(key.spawned == true){
+						fillellipse(key.x,key.y,key.tamanho,key.tamanho);	
+					}
+					if(player.moving){
+						readimagefile(player.atlas[player.pos.direction][cicles%8],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
+					}
+					else{
+						readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
+					}
+			        //Win/Lose Stuff=========================================================================================
+			        if(player.health<=0 || player.lanterna.alcance <= 0){
+						done = 1;
+						cleardevice();
+						setvisualpage(pg);
+						printf("GAME OVER!\n");
+						break;
+					}
+					else if(player.key == true && player.pos.relx >= (bac.larg/2)-15 && player.pos.relx <= (bac.larg/2)+15 && player.pos.rely <= player.tamanho){
+						cleardevice();
+						setvisualpage(pg);
+						printf("YOU WIN!\n");
+						fase = 3;
+						break;
+					}
+			        setvisualpage(pg);
+			        cicles++;
+			        if(cicles >= 65534){
+			        	cicles = 0;
 					}
 				}
 			}
-			for(index=0;index<2;index++){
-				if(battery[index].spawned == true && battery[index].relx >= player.pos.relx-player.tamanho && battery[index].relx <= player.pos.relx+player.tamanho && battery[index].rely >= player.pos.rely-player.tamanho && battery[index].rely <= player.pos.rely+player.tamanho){
-					battery[index].spawned = false;
-					battery[index].relx = 0;
-					battery[index].rely = 0;	
-					battery[index].x = 0;
-	    			battery[index].y = 0;
-	    			player.lanterna.alcance+=50;
-	    			printf("Spawn bateria %d: %d\n",index,battery[index].spawned);
-				}
-			}
-			if(player.lanterna.alcance>450){
-	    		player.lanterna.alcance=450;
-			}
-			if(key.spawned == true && key.relx >= player.pos.relx-player.tamanho && key.relx <= player.pos.relx+player.tamanho && key.rely >= player.pos.rely-player.tamanho && key.rely <= player.pos.rely+player.tamanho){
-					key.spawned = false;
-					key.relx = 0;
-					key.rely = 0;	
-					key.x = 0;
-	    			key.y = 0;
-	    			player.key = true;
-				}
-	        //Draw stuff=======================================================================================
-	        readimagefile("Images/teste.bmp",bac.pos.x,bac.pos.y,bac.larg+bac.pos.x,bac.alt+bac.pos.y);
-	        setcolor(RGB(255,255,0));
-	        setfillstyle(1,RGB(255,255,0));
-	        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
-	        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
-	        fillpoly(4,flash);
-	  		for(index = 0;index < num; index++){
-		        if(enemy[index].pos.x > - enemy[index].tamanho && enemy[index].pos.x < res[0]+enemy[index].tamanho && enemy[index].pos.y > -enemy[index].tamanho && enemy[index].pos.y < res[1]+enemy[index].tamanho && enemy[index].spawned == 1){
-		        	setcolor(RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
-		        	setfillstyle(1,RGB(enemy[index].color[0],enemy[index].color[1],enemy[index].color[2]));
-		        	fillellipse(enemy[index].pos.x,enemy[index].pos.y,enemy[index].tamanho,enemy[index].tamanho);
-				}
-			}
-			setcolor(RGB(255,0,255));
-	        setfillstyle(1,RGB(255,0,255));
-			for(index=0;index < 2; index++){
-				if(battery[index].spawned == true){
-					fillellipse(battery[index].x,battery[index].y,battery[index].tamanho,battery[index].tamanho);	
-				}
-			}
-			setcolor(RGB(0,0,255));
-	        setfillstyle(1,RGB(0,0,255));
-			if(key.spawned == true){
-				fillellipse(key.x,key.y,key.tamanho,key.tamanho);	
-			}
-			if(player.moving){
-				readimagefile(player.atlas[player.pos.direction][cicles%8],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
-			}
-			else{
-				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
-			}
-	        //Win/Lose Stuff=========================================================================================
-	        if(player.health<=0 || player.lanterna.alcance <= 0){
-				done = 1;
-				cleardevice();
-				setvisualpage(pg);
-				printf("GAME OVER!\n");
-				break;
-			}
-			else if(player.key == true && player.pos.relx >= (bac.larg/2)-15 && player.pos.relx <= (bac.larg/2)+15 && player.pos.rely <= player.tamanho){
+		    	
+			case 3:
+				printf("Segunda Cutscene...\n");
+				delay(5000);
+				fase=4;
+			case 4:
+				printf("Segunda fase...\n");
+				delay(1000);
+				fase=5;
+			case 5:
+				printf("Terceira Cutscene...\n");
+				delay(1000);		
+				fase=6;
+			case 6:
+				printf("Chefão...\n");
+				delay(1000);
+				fase=7;
+			case 7:
+				printf("Ultima cutscene...\n");
+				delay(1000);
 				done = 1;
 				cleardevice();
 				setvisualpage(pg);
 				printf("YOU WIN!\n");
 				break;
-			}
-	        setvisualpage(pg);
-	        cicles++;
-	        if(cicles >= 65534){
-	        	cicles = 0;
-			}
-		}
+		}	
 	}
 	cleardevice();
 	printf("\n");
