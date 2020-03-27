@@ -31,8 +31,17 @@ struct enemy{										//Struct para organizar as variaveis dos inimigos
 		};
 	pos pos;											//Criar o objeto pos que referencia a struct pos
 };
+struct boss{
+	int tamanho,health;
+	float speed;	
+	struct pos{				
+		int x,y;
+	};
+	pos pos;											//Criar o objeto pos que referencia a struct pos
+};
 struct background{									//Struct para organizar as variaveis do background
-		int alt,larg;									//Variaveis para guardar as dimenções x,y da imagem de fundo em pixeis
+		int alt,larg;
+		char* imagem;									//Variaveis para guardar as dimenções x,y da imagem de fundo em pixeis*		char8 imagem[25];
 		struct pos{										//Struct para organizar as coordenadas x,y do background
 				int x,y;									//Variaveis para guardar as coordenadas x,y do background
 		};
@@ -55,6 +64,7 @@ battery battery2;								//<= referenciam a struct battery
 battery battery[2] = {battery1,battery2};			//Array para guardar as baterias
 key key;										//Criar o objeto key que referencia a struct key
 background bac;										//Criar o objeto bac que referencia a struct background
+boss boss;
 int xpos = 0; 						//<=
 int ypos = 0;						//<= Variaveis para guardar os vertices do
 int posx = 0;						//<= polgono da lanterna
@@ -118,6 +128,8 @@ int main(){
 	//Play stuff===========================================================================================
 	cleardevice();
     while(done == 0){
+    	printf("Digite a fase desejada: ");
+    	scanf("%d",&fase);
     	switch (fase){
 	    	case 0:
 	    		printf("Menu\n");
@@ -126,12 +138,9 @@ int main(){
 	    		getch();
 	    		fase= 1;
 	    	case 1:
-	    		printf("Primeira cutscene...\n");
-	    		delay(5000);
-	    		fase = 2;
-	    	case 2:
+	    		printf("Jogar\n");
 	    		for (index = 0;index < num; index++){
-			    	    enemy[index].tamanho = 10;
+			    	    enemy[index].tamanho = 32;
 			    	    enemy[index].spawned = 0;
 			    	    enemy[index].speed = 7;
 				}
@@ -141,8 +150,9 @@ int main(){
 				}
 				key.tamanho = 5;
 				key.spawned = false;
-			    bac.larg = 1920;
-			    bac.alt = 1080;
+			    bac.larg = 1600;
+			    bac.alt = 1600;
+			    bac.imagem = "Images/biblioteca.bmp";
 			    player.pos.x = (int)(res[0]/2);
 			    player.pos.y = (int)(res[1]/2);
 			    player.lanterna.alcance = 450;
@@ -156,8 +166,13 @@ int main(){
 			    player.pos.rely = player.pos.y - bac.pos.y;
 			    player.health = 100;
 			    player.lanterna.bateria = 15;
+	    		printf("Primeira cutscene...\n");
+	    		fase = 2;
+	    	case 2:
+	    		printf("Check\n");
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		while(!done){
+	    		while(fase == 2){
+	    			printf("Check 1\n");
 	    			for(pg = 1; pg<=2;pg++){
 			    		setactivepage(pg);
 			    		cleardevice();
@@ -233,7 +248,7 @@ int main(){
 							player.pos.angle+=180;
 						}
 						if(mousex()<player.pos.x && mousey() == player.pos.y){
-							player.pos.angle == 180;
+							player.pos.angle = 180;
 						}
 						if(player.pos.angle>359){
 				            player.pos.angle = 0;
@@ -352,7 +367,7 @@ int main(){
 				    			player.key = true;
 							}
 				        //Draw stuff=======================================================================================
-				        readimagefile("Images/teste.bmp",bac.pos.x,bac.pos.y,bac.larg+bac.pos.x,bac.alt+bac.pos.y);
+				        readimagefile(bac.imagem,bac.pos.x,bac.pos.y,bac.larg+bac.pos.x,bac.alt+bac.pos.y);
 				        setcolor(RGB(255,255,0));
 				        setfillstyle(1,RGB(255,255,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
@@ -413,14 +428,56 @@ int main(){
 				printf("Segunda fase...\n");
 				delay(1000);
 				fase=5;
-			case 5:
-				printf("Terceira Cutscene...\n");
-				delay(1000);		
+			case 5:	
+				int limite;
+				for(index = 0; index < 2; index++){
+					battery[index].spawned = 0;
+					battery[index].tamanho = 5;
+				}
+			    bac.larg = res[1];
+			    bac.alt = res[1];
+			    bac.imagem = "Images/hall.bmp";
+			    limite = res[1]-(320*res[1]/2048);
+			    player.pos.x = (int)(res[0]/2);// Mudar
+			   	player.pos.y = res[1]-((res[1]-limite)/2);// Mudar
+			    player.lanterna.alcance = 450;
+			    player.lanterna.angle = 30;
+			    player.pos.angle = 270;
+			    player.tamanho = 32;
+			    bac.pos.x = (int)(res[0]-res[1])/2;; //Mudar
+			    bac.pos.y = 0;  //Mudar
+			    player.health = 100;
+			    player.lanterna.bateria = 15;
 				fase=6;
-			case 6:
-				printf("Chefão...\n");
-				delay(1000);
-				fase=7;
+			case 6: //Chefão
+			    while(fase == 6){
+			    	for(pg = 1 ; pg <= 2 ; pg ++){
+			    		setactivepage(pg);
+			    		cleardevice();
+			    		//Move Stuff=====================================================================================
+			    		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.y-player.tamanho > limite){
+				        	player.pos.y-=5;
+				        	//player.moving = true;
+						}
+						if((GetAsyncKeyState('A') & 0x8000) && player.pos.x-player.tamanho > 0){
+				       		player.pos.x-=5;
+				       		//player.moving = true;
+						}
+			 			if((GetAsyncKeyState('S') & 0x8000) && player.pos.y+player.tamanho < bac.alt){
+			        		player.pos.y+=5;
+			        		//player.moving = true;
+						}
+						if((GetAsyncKeyState('D') & 0x8000) && player.pos.x+player.tamanho < bac.larg){
+			        		player.pos.x+=5;
+			        		//player.moving = true;
+						}
+			    		//Drawstuff=====================================================================================
+			    		readimagefile(bac.imagem,bac.pos.x,bac.pos.y,bac.larg+bac.pos.x,bac.alt+bac.pos.y);
+			    		setfillstyle(1,RGB(0,255,255));
+			    		fillellipse(player.pos.x,player.pos.y,player.tamanho,player.tamanho);
+			    		setvisualpage(pg);
+					}
+				}
 			case 7:
 				printf("Ultima cutscene...\n");
 				delay(1000);
