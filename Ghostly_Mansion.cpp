@@ -176,7 +176,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 	    			battery[index].y = bac.pos.y+battery[index].rely;
 				}
 			}
-			if(player.score >= 1 && key.spawned == false){
+			if(player.score >= 30 && key.spawned == false){
 				key.spawned = true;
 				player.score = 0;
 				key.relx = rand()%bac.chao.larg;
@@ -443,11 +443,13 @@ int main(){
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
 	    		game(10, 7, 2048, 1600, 2048, 256, "Images/dungeon_chao.bmp", "Images/dungeon_parede.bmp");	
 				enmy = NULL;
-				if (result){
+				if (result == true){
 					fase = 3;
 				}
-				else{
+				else if (result == false){
 					fase = 8;
+					playing = false;
+					break;
 				}
 				//free(enmy);	
 			case 3:
@@ -459,11 +461,12 @@ int main(){
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
 	    		game(20, 10, 2048, 1600, 2048, 256, "Images/biblioteca_chao.bmp", "Images/biblioteca_parede.bmp");	
 				enmy = NULL;
-				if (result){
+				if (result == true){
 					fase = 5;
 				}
-				else{
+				else if(result == false){
 					fase = 8;
+					
 				}
 			case 5:	
 				fase=6;
@@ -744,9 +747,13 @@ int main(){
 				playing = false;
 				cleardevice();
 				setvisualpage(pg);
+				pg = 3;
 				printf("GAME OVER\n");
 				break;
 		}	
+		if(fase == 8){
+			break;
+		}
 	}
 	cleardevice();
 	printf("\n");
