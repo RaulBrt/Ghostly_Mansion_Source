@@ -176,7 +176,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 	    			battery[index].y = bac.pos.y+battery[index].rely;
 				}
 			}
-			if(player.score >= 30 && key.spawned == false){
+			if(player.score >= 30 && key.spawned == false && player.key == false){
 				key.spawned = true;
 				player.score = 0;
 				key.relx = rand()%bac.chao.larg;
@@ -466,6 +466,8 @@ int main(){
 				}
 				else if(result == false){
 					fase = 8;
+					playing = false;
+					break;
 					
 				}
 			case 5:	
@@ -722,6 +724,7 @@ int main(){
 						}
 						else if (player.lanterna.alcance <= 0){
 							fase = 8;
+							playing = false;
 							break;
 						}
 			    		setvisualpage(pg);
