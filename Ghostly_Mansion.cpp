@@ -9,7 +9,7 @@ int res[2] = {1600,900}; 					//Tamanho da tela em pixeis
 struct player{ 										//Struct para organizar as variaveis do jogador
 	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
 	bool key,moving;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
-	char atlas[8][8][15];								//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
+	char atlas[8][5][25];								//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
     struct pos{											//Struct para organizar as variaveis de posição do jogador
         int x,y,angle,relx,rely,direction;					//Variaveis para guardar as coordenadas x,y na tela, o angulo em que o jogador está olhando, as coordenadas x,y em relação ao canto superior esquerdo do mapa e o indice da direção que o jogador está olhando
     };
@@ -375,7 +375,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 				fillellipse(key.x,key.y,key.tamanho,key.tamanho);	
 			}
 			if(player.moving){
-				readimagefile(player.atlas[player.pos.direction][cicles%8],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
+				readimagefile(player.atlas[player.pos.direction][cicles%5],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
 			}
 			else{
 				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
@@ -414,34 +414,40 @@ int main(){
 	bool playing = true;
 	//Define stuff===========================================================================================
 	initwindow(res[0],res[1]);
-	player.atlas[0] = {"Images/w1.bmp","Images/w2.bmp","Images/w3.bmp","Images/w4.bmp","Images/w5.bmp","Images/w6.bmp","Images/w7.bmp","Images/w8.bmp"};
-	player.atlas[1] = {"Images/wd1.bmp","Images/wd2.bmp","Images/wd3.bmp","Images/wd4.bmp","Images/wd5.bmp","Images/wd6.bmp","Images/wd7.bmp","Images/wd8.bmp"};
-	player.atlas[2] = {"Images/d1.bmp","Images/d2.bmp","Images/d3.bmp","Images/d4.bmp","Images/d5.bmp","Images/d6.bmp","Images/d7.bmp","Images/d8.bmp"};
-	player.atlas[3] = {"Images/sd1.bmp","Images/sd2.bmp","Images/sd3.bmp","Images/sd4.bmp","Images/sd5.bmp","Images/sd6.bmp","Images/sd7.bmp","Images/sd8.bmp"};
-	player.atlas[4] = {"Images/s1.bmp","Images/s2.bmp","Images/s3.bmp","Images/s4.bmp","Images/s5.bmp","Images/s6.bmp","Images/s7.bmp","Images/s8.bmp"};
-	player.atlas[5] = {"Images/sa1.bmp","Images/sa2.bmp","Images/sa3.bmp","Images/sa4.bmp","Images/sa5.bmp","Images/sa6.bmp","Images/sa7.bmp","Images/sa8.bmp"};
-	player.atlas[6] = {"Images/a1.bmp","Images/a2.bmp","Images/a3.bmp","Images/a4.bmp","Images/a5.bmp","Images/a6.bmp","Images/a7.bmp","Images/a8.bmp"};
-	player.atlas[7] = {"Images/wa1.bmp","Images/wa2.bmp","Images/wa3.bmp","Images/wa4.bmp","Images/wa5.bmp","Images/wa6.bmp","Images/wa7.bmp","Images/wa8.bmp"};
+	player.atlas[0] = {"Images/Agatha/w1.bmp","Images/Agatha/w2.bmp","Images/Agatha/w3.bmp","Images/Agatha/w4.bmp","Images/Agatha/w5.bmp"};
+	player.atlas[1] = {"Images/Agatha/wd1.bmp","Images/Agatha/wd2.bmp","Images/Agatha/wd3.bmp","Images/Agatha/wd4.bmp","Images/Agatha/wd5.bmp"};
+	player.atlas[2] = {"Images/Agatha/d1.bmp","Images/Agatha/d2.bmp","Images/Agatha/d3.bmp","Images/Agatha/d4.bmp","Images/Agatha/d5.bmp"};
+	player.atlas[3] = {"Images/Agatha/sd1.bmp","Images/Agatha/sd2.bmp","Images/Agatha/sd3.bmp","Images/Agatha/sd4.bmp","Images/Agatha/sd5.bmp"};
+	player.atlas[4] = {"Images/Agatha/s1.bmp","Images/Agatha/s2.bmp","Images/Agatha/s3.bmp","Images/Agatha/s4.bmp","Images/Agatha/s5.bmp"};
+	player.atlas[5] = {"Images/Agatha/sa1.bmp","Images/Agatha/sa2.bmp","Images/Agatha/sa3.bmp","Images/Agatha/sa4.bmp","Images/Agatha/sa5.bmp"};
+	player.atlas[6] = {"Images/Agatha/a1.bmp","Images/Agatha/a2.bmp","Images/Agatha/a3.bmp","Images/Agatha/a4.bmp","Images/Agatha/a5.bmp"};
+	player.atlas[7] = {"Images/Agatha/wa1.bmp","Images/Agatha/wa2.bmp","Images/Agatha/wa3.bmp","Images/Agatha/wa4.bmp","Images/Agatha/wa5.bmp"};
 	//Play stuff===========================================================================================
 	cleardevice();
+	fase = 0;
     while(playing){
     	/*printf("Digite a fase desejada: ");
     	scanf("%d",&fase);*/
-    	fase = 0;
     	switch (fase){
 	    	case 0:
 	    		printf("Menu\n");
 	    		delay(1000);
 	    		printf("Precione a qualquer tecla para jogar...\n");
 	    		getch();
-	    		fase= 1;
+	    		fase = 1;
+	    		break;
 	    	case 1:
+	    		setactivepage(1);
+	    		readimagefile("Images/Cutscenes/cut1.jpg",0,0,res[0],res[1]);
+	    		setvisualpage(1);
+	    		getch();
 	    		fase = 2;
+	    		break;
 	    	case 2:
 	    		printf("Check\n");
 	    		cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(10, 7, 2048, 1600, 2048, 256, "Images/dungeon_chao.bmp", "Images/dungeon_parede.bmp");	
+	    		game(10, 7, 2048, 1600, 2048, 256, "Images/Background/dungeon_chao.bmp", "Images/Background/dungeon_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 3;
@@ -459,7 +465,7 @@ int main(){
 			case 4:
 				cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(20, 10, 2048, 1600, 2048, 256, "Images/biblioteca_chao.bmp", "Images/biblioteca_parede.bmp");	
+	    		game(20, 10, 2048, 1600, 2048, 256, "Images/Background/biblioteca_chao.bmp", "Images/Background/biblioteca_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 5;
@@ -482,7 +488,7 @@ int main(){
 
 			    bac.chao.larg = res[1];
 			    bac.chao.alt = res[1];
-			    bac.chao.imagem = "Images/hall.bmp";
+			    bac.chao.imagem = "Images/background/hall.bmp";
 			    limite = res[1]-(320*bac.chao.alt/2048);
 			    player.pos.x = (int)(res[0]/2);// Mudar
 			   	player.pos.y = bac.chao.alt-((bac.chao.alt-limite)/2);// Mudar
