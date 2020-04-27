@@ -25,7 +25,7 @@ struct enemy{										//Struct para organizar as variaveis dos inimigos
 		float speed;									//Variavel para guardar a velocidade que o inimigo anda
 		bool spawned;									//Variavel para saber se o inimigo já está na tela
 		struct pos{										//Struct para organizar as variaveis de posição do inimigo
-				int x,y,angle,hitangle,walkingangle;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
+				int x,y,angle,hitangle,walkingangle,direction;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
 				int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
 				float relx,rely;							//Variaveis para guardar as coordenadas x,y em relação ao canto superior esquerdo do mapa
 		};
@@ -36,7 +36,7 @@ struct boss{
 	float speed;
 	int color[3];	
 	struct pos{				
-		int x,y,angle,hitangle,walkingangle;
+		int x,y,angle,hitangle,walkingangle,direction;
 		int hit[2];
 	};
 	pos pos;											//Criar o objeto pos que referencia a struct pos
@@ -86,6 +86,7 @@ int flash[8];
 int chance;
 int fase = 0;
 bool done,result;
+char enmyatlas[8][5][25];
 //Make stuff function =======================================================
 void screenflashlight(int angle,int centerx,int centery,int radius,int flashangle){ //Função para calcular os vertices do feixe de luz da lanterna
 	double nangle=angle*(conv); 														//<= Converter angulos de graus para radianos
@@ -271,8 +272,32 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 					else if (cicles%60 == 0 && chance == 0){
 						enmy[index].posi.walkingangle = rand()%360;
 					}
-				enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
-		       	enmy[index].posi.rely+=sin(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
+					enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
+			       	enmy[index].posi.rely+=sin(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
+			       	if(enmy[index].posi.angle > 69 && enmy[index].posi.angle <= 112){
+						enmy[index].posi.direction = 4;
+					}
+					else if(enmy[index].posi.angle > 112 && enmy[index].posi.angle <= 157){
+						enmy[index].posi.direction = 5;
+					}
+					else if(enmy[index].posi.angle > 157 && enmy[index].posi.angle <= 202){
+						enmy[index].posi.direction = 6;
+					}
+					else if(enmy[index].posi.angle > 202 && enmy[index].posi.angle <= 247){
+						enmy[index].posi.direction = 7;
+					}
+					else if(enmy[index].posi.angle > 247 && enmy[index].posi.angle <= 292){
+						enmy[index].posi.direction = 0;
+					}
+					else if(enmy[index].posi.angle > 292 && enmy[index].posi.angle <= 337){
+						enmy[index].posi.direction = 1;
+					}			
+					else if((enmy[index].posi.angle > 337 && enmy[index].posi.angle <= 360) || (enmy[index].posi.angle > 0 && enmy[index].posi.angle <= 23)){
+						enmy[index].posi.direction = 2;
+					}
+					else if(enmy[index].posi.angle > 23 && enmy[index].posi.angle <= 68){
+						enmy[index].posi.direction = 3;
+					}
 		       	//enmy[index].speed+=1;
 				}				
 			}
@@ -357,9 +382,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 	        fillpoly(4,flash);
 	  		for(index = 0;index < num; index++){
 		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
-		        	setcolor(RGB(enmy[index].color[0],enmy[index].color[1],enmy[index].color[2]));
-		        	setfillstyle(1,RGB(enmy[index].color[0],enmy[index].color[1],enmy[index].color[2]));
-		        	fillellipse(enmy[index].posi.x,enmy[index].posi.y,enmy[index].tamanho,enmy[index].tamanho);
+		        	readimagefile(enmyatlas[enmy[index].posi.direction][cicles%5],enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmy[index].posi.x+enmy[index].tamanho,enmy[index].posi.y+enmy[index].tamanho);
 				}
 			}
 			setcolor(RGB(255,0,255));
@@ -422,6 +445,14 @@ int main(){
 	player.atlas[5] = {"Images/Agatha/sa1.bmp","Images/Agatha/sa2.bmp","Images/Agatha/sa3.bmp","Images/Agatha/sa4.bmp","Images/Agatha/sa5.bmp"};
 	player.atlas[6] = {"Images/Agatha/a1.bmp","Images/Agatha/a2.bmp","Images/Agatha/a3.bmp","Images/Agatha/a4.bmp","Images/Agatha/a5.bmp"};
 	player.atlas[7] = {"Images/Agatha/wa1.bmp","Images/Agatha/wa2.bmp","Images/Agatha/wa3.bmp","Images/Agatha/wa4.bmp","Images/Agatha/wa5.bmp"};
+	enmyatlas[0] = {"Images/Fantasma/w1.bmp","Images/Fantasma/w2.bmp","Images/Fantasma/w3.bmp","Images/Fantasma/w4.bmp","Images/Fantasma/w5.bmp"};
+	enmyatlas[1] = {"Images/Fantasma/wd1.bmp","Images/Fantasma/wd2.bmp","Images/Fantasma/wd3.bmp","Images/Fantasma/wd4.bmp","Images/Fantasma/wd5.bmp"};
+	enmyatlas[2] = {"Images/Fantasma/d1.bmp","Images/Fantasma/d2.bmp","Images/Fantasma/d3.bmp","Images/Fantasma/d4.bmp","Images/Fantasma/d5.bmp"};
+	enmyatlas[3] = {"Images/Fantasma/sd1.bmp","Images/Fantasma/sd2.bmp","Images/Fantasma/sd3.bmp","Images/Fantasma/sd4.bmp","Images/Fantasma/sd5.bmp"};
+	enmyatlas[4] = {"Images/Fantasma/s1.bmp","Images/Fantasma/s2.bmp","Images/Fantasma/s3.bmp","Images/Fantasma/s4.bmp","Images/Fantasma/s5.bmp"};
+	enmyatlas[5] = {"Images/Fantasma/sa1.bmp","Images/Fantasma/sa2.bmp","Images/Fantasma/sa3.bmp","Images/Fantasma/sa4.bmp","Images/Fantasma/sa5.bmp"};
+	enmyatlas[6] = {"Images/Fantasma/a1.bmp","Images/Fantasma/a2.bmp","Images/Fantasma/a3.bmp","Images/Fantasma/a4.bmp","Images/Fantasma/a5.bmp"};
+	enmyatlas[7] = {"Images/Fantasma/wa1.bmp","Images/Fantasma/wa2.bmp","Images/Fantasma/wa3.bmp","Images/Fantasma/wa4.bmp","Images/Fantasma/wa5.bmp"};
 	//Play stuff===========================================================================================
 	cleardevice();
 	fase = 0;
@@ -441,7 +472,7 @@ int main(){
 	    		readimagefile("Images/Cutscenes/cut1.jpg",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		getch();
-	    		fase = 2;
+	    		fase = 5;
 	    		break;
 	    	case 2:
 	    		printf("Check\n");
@@ -476,9 +507,13 @@ int main(){
 					break;
 					
 				}
-			case 5:	
+			case 5:
 				fase=6;
+				break;
 			case 6: //Chefão
+			{
+				char fireball[4][30]={"Images/Boss/Fireball/1.bmp","Images/Boss/Fireball/2.bmp","Images/Boss/Fireball/3.bmp","Images/Boss/Fireball/4.bmp"};
+				char bossatlas[8][30]={"Images/Boss/w.bmp","Images/Boss/wd.bmp","Images/Boss/d.bmp","Images/Boss/sd.bmp","Images/Boss/s.bmp","Images/Boss/sa.bmp","Images/Boss/a.bmp","Images/Boss/wa.bmp"};
 				printf("Check\n");
 				int limite,hi;
 				for(index = 0; index < 2; index++){
@@ -509,7 +544,7 @@ int main(){
 			    enmy = (enemy*)realloc(enmy,num*sizeof(enemy));
 				for(index = 0; index < num; index++){
 					enmy[index].spawned = false;
-					enmy[index].tamanho = 16;
+					enmy[index].tamanho = 32;
 				}
 			    cicles = 0;
 			    while(fase == 6){
@@ -553,22 +588,23 @@ int main(){
 							}
 						}
 			    		//Move Stuff=====================================================================================
+			    		player.moving = false;
 			    		if(kbhit()){
 				    		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.y-player.tamanho > limite){
 					        	player.pos.y-=5;
-					        	//player.moving = true;
+					        	player.moving = true;
 							}
 							if((GetAsyncKeyState('A') & 0x8000) && player.pos.x-player.tamanho > bac.pos.x){
 					       		player.pos.x-=5;
-					       		//player.moving = true;
+					       		player.moving = true;
 							}
 				 			if((GetAsyncKeyState('S') & 0x8000) && player.pos.y+player.tamanho < bac.chao.alt){
 				        		player.pos.y+=5;
-				        		//player.moving = true;
+				        		player.moving = true;
 							}
 							if((GetAsyncKeyState('D') & 0x8000) && player.pos.x+player.tamanho < bac.chao.larg+bac.pos.x){
 				        		player.pos.x+=5;
-				        		//player.moving = true;
+				        		player.moving = true;
 							}
 						}
 						ca = mousex()-player.pos.x;
@@ -619,7 +655,7 @@ int main(){
 						else if(boss.pos.x+boss.tamanho > bac.pos.x+res[1] ){
 							boss.pos.walkingangle = 181;
 						}
-						if(boss.pos.y-boss.tamanho <0){
+						if(boss.pos.y-boss.tamanho <128){
 							if(boss.pos.walkingangle >= 270){
 								boss.pos.walkingangle = 45;
 							}
@@ -641,6 +677,30 @@ int main(){
 						}
 						boss.pos.x+=cos(boss.pos.walkingangle*conv)*(int)boss.speed;
 				       	boss.pos.y+=sin(boss.pos.walkingangle*conv)*(int)boss.speed;
+				       	if(boss.pos.walkingangle > 69 && boss.pos.walkingangle <= 112){
+							boss.pos.direction = 4;
+						}
+						else if(boss.pos.walkingangle > 112 && boss.pos.walkingangle <= 157){
+							boss.pos.direction = 5;
+						}
+						else if(boss.pos.walkingangle > 157 && boss.pos.walkingangle <= 202){
+							boss.pos.direction = 6;
+						}
+						else if(boss.pos.walkingangle > 202 && boss.pos.walkingangle <= 247){
+							boss.pos.direction = 7;
+						}
+						else if(boss.pos.walkingangle > 247 && boss.pos.walkingangle <= 292){
+							boss.pos.direction = 0;
+						}
+						else if(boss.pos.walkingangle > 292 && boss.pos.walkingangle <= 337){
+							boss.pos.direction = 1;
+						}			
+						else if((boss.pos.walkingangle > 337 && boss.pos.walkingangle <= 360) || (boss.pos.walkingangle > 0 && boss.pos.walkingangle <= 23)){
+							boss.pos.direction = 2;
+						}
+						else if(boss.pos.walkingangle > 23 && boss.pos.walkingangle <= 68){
+							boss.pos.direction = 3;
+						}
 				       	for(index = 0; index < num;index++){
 				       		if(enmy[index].spawned == true){
 				       			enmy[index].posi.x+=cos(enmy[index].posi.walkingangle*conv)*enmy[index].speed;	
@@ -665,7 +725,7 @@ int main(){
 				   	    	co = ca*tan((player.lanterna.angle/2)*conv);
 				   	    	if ((abs(boss.pos.hit[1]-player.pos.y)<co+boss.tamanho || abs(boss.pos.hit[1]-player.pos.y)<co-boss.tamanho) && sqrt(((boss.pos.x-player.pos.x)*(boss.pos.x-player.pos.x))+((boss.pos.y-player.pos.y)*(boss.pos.y-player.pos.y)))<=player.lanterna.alcance+boss.tamanho){
 				   				boss.color = {255,0,0};
-				   				boss.health -= (int)((abs(100/co))+(abs(100/ca)));
+				   				boss.health -= (int)((abs(1000/co))+(abs(1000/ca)));
 				   				printf("Vida do Boss: %d\n",boss.health);
 				   			}
 				        }
@@ -701,20 +761,24 @@ int main(){
 						}
 						
 			    		//Drawstuff=====================================================================================
-			    		//readimagefile(bac.chao.imagem,bac.pos.x,bac.pos.y,bac.chao.larg+bac.pos.x,bac.chao.alt+bac.pos.y);
+			    		readimagefile(bac.chao.imagem,bac.pos.x,bac.pos.y,bac.chao.larg+bac.pos.x,bac.chao.alt+bac.pos.y);
 			    		setcolor(RGB(255,255,0));
 				        setfillstyle(1,RGB(255,255,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
 				        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
 				        fillpoly(4,flash);
-			    		setfillstyle(1,RGB(0,255,255));
-			    		fillellipse(player.pos.x,player.pos.y,player.tamanho,player.tamanho);
+				        if(player.moving){
+				        	readimagefile(player.atlas[player.pos.direction][cicles%5],player.pos.x-player.tamanho,player.pos.y-player.tamanho,player.pos.x+player.tamanho,player.pos.y+player.tamanho);
+						}
+			    		else{
+			    			readimagefile(player.atlas[player.pos.direction][0],player.pos.x-player.tamanho,player.pos.y-player.tamanho,player.pos.x+player.tamanho,player.pos.y+player.tamanho);
+						}
 			    		setfillstyle(1,RGB(boss.color[0],boss.color[1],boss.color[2]));
-			    		fillellipse(boss.pos.x,boss.pos.y,boss.tamanho,boss.tamanho);
+			    		readimagefile(bossatlas[boss.pos.direction],boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.pos.x+boss.tamanho,boss.pos.y+boss.tamanho);
 			    		setfillstyle(1,RGB(0,0,255));
 			    		for(index = 0; index < num; index++){
 			    			if(enmy[index].spawned == true){
-			    				fillellipse(enmy[index].posi.x,enmy[index].posi.y,enmy[index].tamanho,enmy[index].tamanho);
+			    				readimagefile(fireball[cicles%4],enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmy[index].posi.x+enmy[index].tamanho,enmy[index].posi.y+enmy[index].tamanho);
 							}
 						}
 						setfillstyle(1,RGB(255,0,255));
@@ -743,6 +807,11 @@ int main(){
 				}
 				enmy = NULL;
 				free(enmy);
+				delete enmy;
+				free(enmyatlas);
+				delete enmyatlas;
+				break;
+				}
 			case 7:
 				printf("Ultima cutscene...\n");
 				delay(1000);
