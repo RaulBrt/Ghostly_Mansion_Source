@@ -21,7 +21,6 @@ struct player{ 										//Struct para organizar as variaveis do jogador
 };
 struct enemy{										//Struct para organizar as variaveis dos inimigos
 		int tamanho,health;								//Variaveis para guardar o tamanho da imagem e a vida do inimigo
-		int color[3];
 		float speed;									//Variavel para guardar a velocidade que o inimigo anda
 		bool spawned;									//Variavel para saber se o inimigo já está na tela
 		struct pos{										//Struct para organizar as variaveis de posição do inimigo
@@ -33,8 +32,7 @@ struct enemy{										//Struct para organizar as variaveis dos inimigos
 };
 struct boss{
 	int tamanho,health;
-	float speed;
-	int color[3];	
+	float speed;	
 	struct pos{				
 		int x,y,angle,hitangle,walkingangle,direction;
 		int hit[2];
@@ -116,7 +114,7 @@ void spawnenemies(int enem){														//Função para fazer inimigos aparecere
 		}
 		enmy[enem].posi.walkingangle = rand()%360;
     	enmy[enem].spawned = 1;
-    	enmy[enem].health = 100;
+    	enmy[enem].health = 50;
     	//printf("enmy[%d] Spawnou\n",enem);
 	}
 	//printf("Inimigo %d: posicao x: %d, posicao y: %d, spawn: %d\n",enem,enmy[enem].posi.relx,enmy[enem].posi.rely,enmy[enem].spawned);
@@ -156,7 +154,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
     player.pos.rely = player.pos.y - bac.pos.y;
 	printf("Primeira cutscene...\n");
 	while(!done){
-		for(pg = 1; pg<=3;pg++){
+		for(pg = 1; pg<=2;pg++){
 			setactivepage(pg);
 			cleardevice();
 			//Spawn stuff=======================================================================================
@@ -265,11 +263,11 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 			}
 			for(index = 0; index < num; index ++){
 				if(enmy[index].spawned == 1){
-					chance = rand()%5;
+					chance = rand()%3;
 					if (enmy[index].posi.relx-enmy[index].tamanho < 0 || enmy[index].posi.rely-enmy[index].tamanho < 0 || enmy[index].posi.relx+enmy[index].tamanho > bac.chao.larg || enmy[index].posi.rely+enmy[index].tamanho > bac.chao.alt){
 						enmy[index].posi.walkingangle += 180;
 					}
-					else if (cicles%60 == 0 && chance == 0){
+					else if (cicles%30 == 0 && chance == 0){
 						enmy[index].posi.walkingangle = rand()%360;
 					}
 					enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
@@ -326,12 +324,10 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 				enmy[index].posi.hit[1] = hity;
 				//player.pos.hit[0] = player.pos.x+player.lanterna.alcance;
 				//player.pos.hit[1] = player.pos.y;
-				enmy[index].color = {0,255,0};
 				if(enmy[index].posi.hit[0]>player.pos.x && (enmy[index].posi.hitangle < 90 || enmy[index].posi.hitangle > 270) && enmy[index].spawned == 1){
 		   			ca = (enmy[index].posi.hit[0]-player.pos.x);
 		   	    	co = ca*tan((player.lanterna.angle/2)*conv);
 		   	    	if (abs(enmy[index].posi.hit[1]-player.pos.y)<co && sqrt(((enmy[index].posi.x-player.pos.x)*(enmy[index].posi.x-player.pos.x))+((enmy[index].posi.y-player.pos.y)*(enmy[index].posi.y-player.pos.y)))<=player.lanterna.alcance){
-		   				enmy[index].color = {255,0,0};
 		   				enmy[index].health -= (int)((abs(100/co))+(abs(100/ca)));
 		   			}
 		        }
@@ -345,7 +341,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned){
 					if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 						if(player.lanterna.alcance > 0){
-								player.lanterna.alcance-=50;
+								player.lanterna.alcance-=25;
 						}
 						//printf("Vida: %d\n",player.health);
 					}
@@ -406,7 +402,6 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 			readimagefile(bac.parede.imagem,bac.pos.x,bac.pos.y-bac.parede.alt,bac.parede.larg+bac.pos.x,bac.pos.y);
 	        //Win/Lose Stuff=========================================================================================
 	        if(player.lanterna.alcance <= 0){
-				done = 1;
 				cleardevice();
 				setvisualpage(pg);
 				printf("GAME OVER!\n");
@@ -429,12 +424,10 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 			}
 		}
 	}
-	return result;
 }
 //Actual code stuff========================================================
 int main(){
 	srand((unsigned)time(NULL));
-	bool playing = true;
 	//Define stuff===========================================================================================
 	initwindow(res[0],res[1]);
 	player.atlas[0] = {"Images/Agatha/w1.bmp","Images/Agatha/w2.bmp","Images/Agatha/w3.bmp","Images/Agatha/w4.bmp","Images/Agatha/w5.bmp"};
@@ -456,7 +449,9 @@ int main(){
 	//Play stuff===========================================================================================
 	cleardevice();
 	fase = 0;
+	bool playing = true;
     while(playing){
+    	printf("Estou aqui agora\n");
     	/*printf("Digite a fase desejada: ");
     	scanf("%d",&fase);*/
     	switch (fase){
@@ -466,12 +461,14 @@ int main(){
 	    		int imagem = 0;
 	    		while(imagem < 2){
 					for(pg = 1;pg<=2;pg++){
+						char cheat[10] = {};
 						setactivepage(pg);
 						cleardevice();
 						if(imagem == 0){
 							if (GetAsyncKeyState(VK_LBUTTON) && 0x8000){
 								if(mousey()>=(650*res[1])/1080 && mousey()<=(770*res[1])/1080){
 									if(mousex()>=(int)(190*res[0])/1920 && mousex()<=(int)(440*res[0])/1920){	
+										fase = 1;
 										imagem = 3000;
 										break;
 									}
@@ -484,7 +481,7 @@ int main(){
 							}
 						}
 						else if(imagem == 1){
-							if ((GetKeyState(VK_LBUTTON))){
+							if (GetAsyncKeyState(VK_LBUTTON) && 0x8000){
 								if(mousey()>=(970*res[1])/1080 && mousey()<=(1050*res[1])/1080){
 									if(mousex()>=(int)(1650*res[0])/1920 && mousex()<=(int)(1890*res[0])/1920){	
 										imagem = 0;
@@ -494,55 +491,84 @@ int main(){
 						}
 						readimagefile(menu[imagem],0,0,res[0],res[1]);
 			    		setvisualpage(pg);
+			    		if (GetAsyncKeyState('L') && GetAsyncKeyState('L') && 0x8000){
+			    			printf("Digite a trapaca: ");
+			    			scanf("%s",&cheat);
+			    		}
+			    		if(strcmp(cheat, "Ap0cryph4") == 0) {
+			    			cleardevice();
+			    			fase = 3;
+			    			imagem = 3000;
+			    			break;
+						}
+						else if (strcmp(cheat, "Sp3ctr3") == 0){
+							cleardevice();
+							fase = 5;
+							imagem = 3000;
+							break;
+						}
+						else if (strcmp(cheat, "Sp3ctr3") == 1 && strcmp(cheat, "Ap0cryph4") == 1) {
+							cheat = {};
+						}
 					}
 				}
-	    		fase = 1;
 	    		break;
 	    	}
 	    	case 1:
-	    		printf("Cut 1\n");
 	    		setactivepage(1);
-	    		readimagefile("Images/Cutscenes/cut1.jpg",0,0,res[0],res[1]);
+	    		readimagefile("Images/Cutscenes/cut1.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		getch();
 	    		fase = 2;
 	    		break;
-	    	case 2:
+	    	case 2:{
 	    		printf("Check\n");
 	    		cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(10, 7, 2048, 1600, 2048, 256, "Images/Background/dungeon_chao.bmp", "Images/Background/dungeon_parede.bmp");	
+	    		game(10, 4, 2048, 1600, 2048, 256, "Images/Background/dungeon_chao.bmp", "Images/Background/dungeon_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 3;
 				}
-				else if (result == false){
+				if (result == false){
 					fase = 8;
-					playing = false;
-					break;
+					printf("%d\n",fase);					
 				}
+				break;
+			}
 				//free(enmy);	
-			case 3:
-				printf("Segunda Cutscene...\n");
-				delay(5000);
-				fase=4;
+			case 3:{
+	    		setactivepage(1);
+	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
+	    		setvisualpage(1);
+	    		delay(5000);   		
+				getch();
+	    		fase = 4;
+	    		break;
+			}
+
 			case 4:
 				cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(20, 10, 2048, 1600, 2048, 256, "Images/Background/biblioteca_chao.bmp", "Images/Background/biblioteca_parede.bmp");	
+	    		game(20, 6, 2048, 1600, 2048, 256, "Images/Background/biblioteca_chao.bmp", "Images/Background/biblioteca_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 5;
+					break;
 				}
 				else if(result == false){
 					fase = 8;
-					playing = false;
 					break;
 					
 				}
 			case 5:
-				fase=6;
-				break;
+				setactivepage(1);
+	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
+	    		setvisualpage(1);
+	    		delay(5000);
+	    		getch();
+	    		fase = 6;
+	    		break;
 			case 6: //Chefão
 			{
 				char fireball[4][30]={"Images/Boss/Fireball/1.bmp","Images/Boss/Fireball/2.bmp","Images/Boss/Fireball/3.bmp","Images/Boss/Fireball/4.bmp"};
@@ -704,8 +730,8 @@ int main(){
 								boss.pos.walkingangle = 225;
 							}
 						}
-						chance = rand()%3;
-						if (cicles%60 == 0 && chance == 0){
+						chance = rand()%2;
+						if (cicles%30 == 0 && chance == 0){
 							boss.pos.walkingangle = rand()%360;
 						}
 						boss.pos.x+=cos(boss.pos.walkingangle*conv)*(int)boss.speed;
@@ -752,12 +778,10 @@ int main(){
 						hitbox(boss.pos.x,boss.pos.y,boss.pos.hitangle,player.pos.x,player.pos.y);
 						boss.pos.hit[0] = hitx;
 						boss.pos.hit[1] = hity;
-						boss.color = {0,255,0};
 						if(boss.pos.hit[0]>player.pos.x && (boss.pos.hitangle < 90 || boss.pos.hitangle > 270)){
 				   			ca = (boss.pos.hit[0]-player.pos.x);
 				   	    	co = ca*tan((player.lanterna.angle/2)*conv);
 				   	    	if ((abs(boss.pos.hit[1]-player.pos.y)<co+boss.tamanho || abs(boss.pos.hit[1]-player.pos.y)<co-boss.tamanho) && sqrt(((boss.pos.x-player.pos.x)*(boss.pos.x-player.pos.x))+((boss.pos.y-player.pos.y)*(boss.pos.y-player.pos.y)))<=player.lanterna.alcance+boss.tamanho){
-				   				boss.color = {255,0,0};
 				   				boss.health -= (int)((abs(1000/co))+(abs(1000/ca)));
 				   				printf("Vida do Boss: %d\n",boss.health);
 				   			}
@@ -806,7 +830,6 @@ int main(){
 			    		else{
 			    			readimagefile(player.atlas[player.pos.direction][0],player.pos.x-player.tamanho,player.pos.y-player.tamanho,player.pos.x+player.tamanho,player.pos.y+player.tamanho);
 						}
-			    		setfillstyle(1,RGB(boss.color[0],boss.color[1],boss.color[2]));
 			    		readimagefile(bossatlas[boss.pos.direction],boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.pos.x+boss.tamanho,boss.pos.y+boss.tamanho);
 			    		setfillstyle(1,RGB(0,0,255));
 			    		for(index = 0; index < num; index++){
@@ -846,24 +869,28 @@ int main(){
 				break;
 				}
 			case 7:
-				printf("Ultima cutscene...\n");
-				delay(1000);
-				playing = false;
+				setactivepage(1);
+	    		readimagefile("Images/Cutscenes/cut4.bmp",0,0,res[0],res[1]);
+	    		setvisualpage(1);
+	    		delay(5000);
+	    		setactivepage(2);
+	    		readimagefile("Images/Cutscenes/cut5.bmp",0,0,res[0],res[1]);
+	    		setvisualpage(2);
+	    		delay(5000);
+	    		getch();
+	    		fase = 0;
+	    		break;
+			case 8:{
+				//playing = false;
 				cleardevice();
-				setvisualpage(pg);
-				printf("YOU WIN!\n");
+				setactivepage(1);
+				readimagefile("Images/Cutscenes/over.bmp",0,0,res[0],res[1]);
+				setvisualpage(1);
+				delay(5000);
+				getch();
+				fase = 0;
 				break;
-			case 8:
-				delay(1000);
-				playing = false;
-				cleardevice();
-				setvisualpage(pg);
-				pg = 3;
-				printf("GAME OVER\n");
-				break;
-		}	
-		if(fase == 8){
-			break;
+			}	
 		}
 	}
 	cleardevice();
