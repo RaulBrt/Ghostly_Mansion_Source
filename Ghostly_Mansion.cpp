@@ -460,19 +460,52 @@ int main(){
     	/*printf("Digite a fase desejada: ");
     	scanf("%d",&fase);*/
     	switch (fase){
-	    	case 0:
+	    	case 0:{
 	    		printf("Menu\n");
-	    		delay(1000);
-	    		printf("Precione a qualquer tecla para jogar...\n");
-	    		getch();
+	    		char menu[2][20]={"Images/menu.bmp","Images/menu_2.bmp"};
+	    		int imagem = 0;
+	    		while(imagem < 2){
+					for(pg = 1;pg<=2;pg++){
+						setactivepage(pg);
+						cleardevice();
+						if(imagem == 0){
+							if (GetAsyncKeyState(VK_LBUTTON) && 0x8000){
+								if(mousey()>=(650*res[1])/1080 && mousey()<=(770*res[1])/1080){
+									if(mousex()>=(int)(190*res[0])/1920 && mousex()<=(int)(440*res[0])/1920){	
+										imagem = 3000;
+										break;
+									}
+								}
+								else if(mousex()>=(int)(190*res[0])/1920 && mousex()<=(int)(720*res[0])/1920){	
+									if(mousey()>=(800*res[1])/1080 && mousey()<=(890*res[1])/1080){
+										imagem = 1;
+									}
+								}
+							}
+						}
+						else if(imagem == 1){
+							if ((GetKeyState(VK_LBUTTON))){
+								if(mousey()>=(970*res[1])/1080 && mousey()<=(1050*res[1])/1080){
+									if(mousex()>=(int)(1650*res[0])/1920 && mousex()<=(int)(1890*res[0])/1920){	
+										imagem = 0;
+									}
+								}
+							}
+						}
+						readimagefile(menu[imagem],0,0,res[0],res[1]);
+			    		setvisualpage(pg);
+					}
+				}
 	    		fase = 1;
 	    		break;
+	    	}
 	    	case 1:
+	    		printf("Cut 1\n");
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut1.jpg",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		getch();
-	    		fase = 5;
+	    		fase = 2;
 	    		break;
 	    	case 2:
 	    		printf("Check\n");
