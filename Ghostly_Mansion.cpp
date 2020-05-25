@@ -64,19 +64,19 @@ struct key{											//Struct para organizar as variaveis da chave
 	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da chave
 };
 //Define Global Stuff===================================================================
-int num;										//Variavel para guardar o numero maximo de inimigos na tela ao mesmo tempo
-player player;									//Criar o objeto player que referencia a struct player
+int num;
+player player;
 enemy *enmy;
-battery battery[2];			//Array para guardar as baterias
-key key;										//Criar o objeto key que referencia a struct key
-background bac;										//Criar o objeto bac que referencia a struct background
+battery battery[2];
+key key;
+background bac;
 boss boss;
-int xpos = 0; 						//<=
-int ypos = 0;						//<= Variaveis para guardar os vertices do
-int posx = 0;						//<= polgono da lanterna
-int posy = 0;						//<=
-int hitx = 0;					//<= Variaveis para guardar momentaneamente
-int hity = 0;					//<= a posição da hitbox do inimigo
+int xpos = 0;
+int ypos = 0;
+int posx = 0;
+int posy = 0;
+int hitx = 0;
+int hity = 0;
 int ca,pg,index;
 double co;
 unsigned int cicles = 0;
@@ -119,7 +119,20 @@ void spawnenemies(int enem){														//Função para fazer inimigos aparecere
 	}
 	//printf("Inimigo %d: posicao x: %d, posicao y: %d, spawn: %d\n",enem,enmy[enem].posi.relx,enmy[enem].posi.rely,enmy[enem].spawned);
 }
-bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* chao, char* parede){
+void mask(int left, int top, int right, int bottom){
+	int points[10];
+	setfillstyle(1,RGB(0,0,0));
+	setcolor(RGB(0,0,0));
+	points = {0,0,0,res[1],left,res[1],left,0,0,0};
+	fillpoly(5,points);
+	points = {0,0,0,top,res[0],top,res[0],0,0,0};
+	fillpoly(5,points);
+	points = {0,bottom,0,res[1],res[0],res[1],res[0],bottom,0,bottom};
+	fillpoly(5,points);
+	points = {right,0,right,res[1],res[0],res[1],res[0],0,0,0};
+	fillpoly(5,points);
+}
+bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, char* chao, char* parede){
 	done = false;
 	player.lanterna.alcance = 450;
 	player.lanterna.angle = 30;
@@ -175,7 +188,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 	    			battery[index].y = bac.pos.y+battery[index].rely;
 				}
 			}
-			if(player.score >= 30 && key.spawned == false && player.key == false){
+			if(player.score >= win && key.spawned == false && player.key == false){
 				key.spawned = true;
 				player.score = 0;
 				key.relx = rand()%bac.chao.larg;
@@ -398,6 +411,7 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
 			}
 			readimagefile(bac.parede.imagem,bac.pos.x,bac.pos.y-bac.parede.alt,bac.parede.larg+bac.pos.x,bac.pos.y);
+			mask(bac.pos.x,bac.pos.y-bac.parede.alt,bac.pos.x+bac.parede.larg,bac.pos.y+bac.chao.alt);
 	        //Win/Lose Stuff=========================================================================================
 	        if(player.lanterna.alcance <= 0){
 				cleardevice();
@@ -407,13 +421,15 @@ bool game(int num, int speed, int chaox, int chaoy,int parx, int pary, char* cha
 				result = false;
 				break;
 			}
-			else if(player.key == true && player.pos.relx >= (bac.chao.larg/2)-15 && player.pos.relx <= (bac.chao.larg/2)+15 && player.pos.rely <= player.tamanho){
-				cleardevice();
-				setvisualpage(pg);
-				printf("YOU WIN!\n");
-				done = true;
-				result = true;
-				break;
+			else if(player.key == true){
+			 	if((num == 20 && player.pos.relx >= (bac.chao.larg/2)-15 && player.pos.relx <= (bac.chao.larg/2)+15 && player.pos.rely <= player.tamanho) || (num == 10 && player.pos.relx - player.tamanho <= 0)){
+					cleardevice();
+					setvisualpage(pg);
+					printf("YOU WIN!\n");
+					done = true;
+					result = true;
+					break;
+				}
 			}
 	        setvisualpage(pg);
 	        cicles++;
@@ -448,6 +464,7 @@ int main(){
 	cleardevice();
 	fase = 0;
 	bool playing = true;
+	int wn = 30;
     while(playing){
     	printf("Estou aqui agora\n");
     	/*printf("Digite a fase desejada: ");
@@ -489,7 +506,7 @@ int main(){
 						}
 						readimagefile(menu[imagem],0,0,res[0],res[1]);
 			    		setvisualpage(pg);
-			    		if (GetAsyncKeyState('L') && GetAsyncKeyState('L') && 0x8000){
+			    		if (GetAsyncKeyState('A') && GetAsyncKeyState('L') && 0x8000){
 			    			printf("Digite a trapaca: ");
 			    			scanf("%s",&cheat);
 			    		}
@@ -503,6 +520,11 @@ int main(){
 							cleardevice();
 							fase = 5;
 							imagem = 3000;
+							break;
+						}
+						else if (strcmp(cheat, "V1ct0ry") == 0){
+							printf("Digite a pontuacao para ganhar: ");
+			    			scanf("%d",&wn);
 							break;
 						}
 						else if (strcmp(cheat, "Sp3ctr3") == 1 && strcmp(cheat, "Ap0cryph4") == 1) {
@@ -523,7 +545,7 @@ int main(){
 	    		printf("Check\n");
 	    		cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(10, 4, 2048, 1600, 2048, 256, "Images/Background/dungeon_chao.bmp", "Images/Background/dungeon_parede.bmp");	
+	    		game(wn ,10, 4, 2048, 800, 2048, 256, "Images/Background/dungeon_chao.bmp", "Images/Background/dungeon_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 3;
@@ -548,7 +570,7 @@ int main(){
 			case 4:
 				cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(20, 6, 2048, 1600, 2048, 256, "Images/Background/biblioteca_chao.bmp", "Images/Background/biblioteca_parede.bmp");	
+	    		game(wn ,20, 6, 2048, 1600, 2048, 256, "Images/Background/biblioteca_chao.bmp", "Images/Background/biblioteca_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 5;
@@ -620,7 +642,7 @@ int main(){
 			    				ca = player.pos.x-enmy[index].posi.x;
 			    				co = player.pos.y-enmy[index].posi.y;
 			    				hi = (int)sqrt((co*co)+(ca*ca));
-			    				enmy[index].posi.walkingangle = (int)(acos(ca/hi)*(180/3.14159265359));
+			    				enmy[index].posi.walkingangle = (int)(acos((float)ca/(float)hi)*((float)180/(float)3.14159265359));
 			    				if(enmy[index].posi.walkingangle<0){
 			    					enmy[index].posi.walkingangle+=180;
 								}
@@ -852,6 +874,7 @@ int main(){
 									
 							}
 						}
+						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
 						//Win/lose====================================================================================================
 						if(boss.health <= 0){
 							fase = 7;
