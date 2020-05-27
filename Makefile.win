@@ -1,0 +1,33 @@
+# Project: Ghostly_Mansion
+# Makefile created by Dev-C++ 5.11
+
+CPP      = g++.exe
+CC       = gcc.exe
+WINDRES  = windres.exe
+RES      = Ghostly_Mansion_private.res
+OBJ      = Ghostly_Mansion.o $(RES)
+LINKOBJ  = Ghostly_Mansion.o $(RES)
+LIBS     = -L"F:/Program Files/Dev-Cpp/MinGW/lib" -L"F:/Program Files/Dev-Cpp/MinGW/mingw32/lib" -static-libgcc -lbgi -lgdi32 -lcomdlg32 -luuid -loleaut32 -lole32
+INCS     = -I"F:/Program Files/Dev-Cpp/MinGW/include" -I"F:/Program Files/Dev-Cpp/MinGW/lib/gcc/mingw32/4.4.1/include"
+CXXINCS  = -I"F:/Program Files/Dev-Cpp/MinGW/include" -I"F:/Program Files/Dev-Cpp/MinGW/lib/gcc/mingw32/4.4.1/include" -I"F:/Program Files/Dev-Cpp/MinGW/lib/gcc/mingw32/4.4.1/include/c++"
+BIN      = Ghostly_Mansion.exe
+CXXFLAGS = $(CXXINCS) 
+CFLAGS   = $(INCS) 
+RM       = rm.exe -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
+
+Ghostly_Mansion.o: Ghostly_Mansion.cpp
+	$(CPP) -c Ghostly_Mansion.cpp -o Ghostly_Mansion.o $(CXXFLAGS)
+
+Ghostly_Mansion_private.res: Ghostly_Mansion_private.rc 
+	$(WINDRES) -i Ghostly_Mansion_private.rc --input-format=rc -o Ghostly_Mansion_private.res -O coff 
+
