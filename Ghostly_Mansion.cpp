@@ -9,7 +9,8 @@ int res[2] = {1600,900}; 					//Tamanho da tela em pixeis
 struct player{ 										//Struct para organizar as variaveis do jogador
 	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
 	bool key,moving;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
-	char atlas[8][5][25];								//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
+	void *atlas[8][5];	
+	void *mask[8][5];							//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
     struct pos{											//Struct para organizar as variaveis de posição do jogador
         int x,y,angle,relx,rely,direction;					//Variaveis para guardar as coordenadas x,y na tela, o angulo em que o jogador está olhando, as coordenadas x,y em relação ao canto superior esquerdo do mapa e o indice da direção que o jogador está olhando
     };
@@ -22,7 +23,8 @@ struct player{ 										//Struct para organizar as variaveis do jogador
 struct enemy{										//Struct para organizar as variaveis dos inimigos
 		int tamanho,speed;								//Variaveis para guardar o tamanho da imagem e a vida do inimigo
 		float health;									//Variavel para guardar a velocidade que o inimigo anda
-		bool spawned;									//Variavel para saber se o inimigo já está na tela
+		bool spawned;
+								//Variavel para saber se o inimigo já está na tela
 		struct pos{										//Struct para organizar as variaveis de posição do inimigo
 				int x,y,angle,hitangle,walkingangle,direction;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
 				int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
@@ -64,27 +66,27 @@ struct key{											//Struct para organizar as variaveis da chave
 	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da chave
 };
 //Define Global Stuff===================================================================
-int num;
-player player;
-enemy *enmy;
-battery battery[2];
-key key;
-background bac;
-boss boss;
+int num,ca,pg,index;
 int xpos = 0;
 int ypos = 0;
 int posx = 0;
 int posy = 0;
 int hitx = 0;
 int hity = 0;
-int ca,pg,index;
 double co;
-unsigned int cicles = 0;
+unsigned long long int cicles = 0;
+void *enmyatlas[8][5];
+void *enmymask[8][5];
 int flash[8];
 int chance;
 int fase = 0;
 bool done,result;
-char enmyatlas[8][5][25];
+player player;
+enemy *enmy;
+battery battery[2];
+key key;
+background bac;
+boss boss;
 //Make stuff function =======================================================
 void screenflashlight(int angle,int centerx,int centery,int radius,int flashangle){ //Função para calcular os vertices do feixe de luz da lanterna
 	double nangle=angle*(conv); 														//<= Converter angulos de graus para radianos
@@ -132,25 +134,60 @@ void mask(int left, int top, int right, int bottom){
 	points = {right,0,right,res[1],res[0],res[1],res[0],0,0,0};
 	fillpoly(5,points);
 }
+void load_img(){
+	int i,j;
+	int tam = imagesize(0,0,player.tamanho*2,player.tamanho*2);
+	readimagefile("Images/Agatha/bitmap.bmp",0,0,480,768);
+	for(i=0;i<8;i++){
+		for(j=0;j<5;j++){
+			player.atlas[i][j] = malloc(tam);
+			getimage(j*player.tamanho*2,i*player.tamanho*2,(j+1)*player.tamanho*2,(i+1)*player.tamanho*2,player.atlas[i][j]);
+		}
+	}
+	cleardevice();
+	readimagefile("Images/Agatha/bitmap_mask.bmp",0,0,480,768);
+	for(i=0;i<8;i++){
+		for(j=0;j<5;j++){
+			player.mask[i][j] = malloc(tam);
+			getimage(j*player.tamanho*2,i*player.tamanho*2,(j+1)*player.tamanho*2,(i+1)*player.tamanho*2,player.mask[i][j]);
+		}
+	}
+	cleardevice();
+	tam = imagesize(0,0,96,96);
+	readimagefile("Images/Fantasma/bitmap.bmp",0,0,480,768);
+	for(i=0;i<8;i++){
+		for(j=0;j<5;j++){
+			printf("load_img\n");
+			enmyatlas[i][j] = malloc(tam);
+			getimage(j*96,i*96,(j+1)*96,(i+1)*96,enmyatlas[i][j]);
+			
+		}
+	}
+	cleardevice();
+	readimagefile("Images/Fantasma/bitmap_mask.bmp",0,0,480,768);
+	for(i=0;i<8;i++){
+		for(j=0;j<5;j++){
+			enmymask[i][j] = malloc(tam);
+			getimage(j*96,i*96,(j+1)*96,(i+1)*96,enmymask[i][j]);
+		}
+	}
+	
+}
+
 bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, char* chao, char* parede){
 	done = false;
 	player.lanterna.alcance = 450;
-	player.lanterna.angle = 30;
 	player.pos.angle = 270;
-	player.tamanho = 32;
 	enmy = NULL;
 	enmy = (enemy*)realloc(enmy,num*sizeof(enemy));
 	printf("Jogar\n");
 	for (index = 0;index < num; index++){
-    	    enmy[index].tamanho = 32;
     	    enmy[index].spawned = 0;
     	    enmy[index].speed = speed;
 	}
 	for(index = 0; index < 2; index++){
 		battery[index].spawned = 0;
-		battery[index].tamanho = 48;
 	}
-	key.tamanho = 64;
 	key.spawned = false;
     bac.chao.larg = chaox;//2046
     bac.chao.alt = chaoy;//1600
@@ -334,8 +371,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				hitbox(enmy[index].posi.x,enmy[index].posi.y,enmy[index].posi.hitangle,player.pos.x,player.pos.y);
 				enmy[index].posi.hit[0] = hitx;
 				enmy[index].posi.hit[1] = hity;
-				//player.pos.hit[0] = player.pos.x+player.lanterna.alcance;
-				//player.pos.hit[1] = player.pos.y;
 				if(enmy[index].posi.hit[0]>player.pos.x && (enmy[index].posi.hitangle < 90 || enmy[index].posi.hitangle > 270) && enmy[index].spawned == 1){
 		   			ca = (enmy[index].posi.hit[0]-player.pos.x);
 		   	    	co = ca*tan((player.lanterna.angle/2)*conv);
@@ -355,7 +390,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 						if(player.lanterna.alcance > 0){
 								player.lanterna.alcance-=25;
 						}
-						//printf("Vida: %d\n",player.health);
 					}
 				}
 			}
@@ -390,7 +424,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	        fillpoly(4,flash);
 	  		for(index = 0;index < num; index++){
 		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
-		        	readimagefile(enmyatlas[enmy[index].posi.direction][cicles%5],enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmy[index].posi.x+enmy[index].tamanho,enmy[index].posi.y+enmy[index].tamanho);
+					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmymask[enmy[index].posi.direction][cicles%5],AND_PUT);
+					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmyatlas[enmy[index].posi.direction][cicles%5],OR_PUT);
 				}
 			}
 			for(index=0;index < 2; index++){
@@ -399,16 +434,16 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 						
 				}
 			}
-			setcolor(RGB(0,0,255));
-	        setfillstyle(1,RGB(0,0,255));
 			if(key.spawned == true){
 				readimagefile("Images/Objetos/Chave.bmp",key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.x+(key.tamanho/2),key.y+(key.tamanho/2));
 			}
 			if(player.moving){
-				readimagefile(player.atlas[player.pos.direction][cicles%5],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][cicles%5],OR_PUT);
 			}
 			else{
-				readimagefile(player.atlas[player.pos.direction][0],player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.pos.x+(player.tamanho),player.pos.y+(player.tamanho));
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][0],AND_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][0],OR_PUT);
 			}
 			readimagefile(bac.parede.imagem,bac.pos.x,bac.pos.y-bac.parede.alt,bac.parede.larg+bac.pos.x,bac.pos.y);
 			mask(bac.pos.x,bac.pos.y-bac.parede.alt,bac.pos.x+bac.parede.larg,bac.pos.y+bac.chao.alt);
@@ -440,31 +475,27 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	}
 }
 //Actual code stuff========================================================
-int main(){
+int main(){	
+	player.lanterna.angle = 30;
+	player.pos.angle = 270;
+	player.tamanho = 48;
+	for(index = 0; index < 2; index++){
+		battery[index].tamanho = 48;
+	}
+	key.tamanho = 64;
+	for (index = 0;index < num; index++){
+    	    enmy[index].tamanho = 48;
+	}
 	srand((unsigned)time(NULL));
 	//Define stuff===========================================================================================
-	initwindow(res[0],res[1]);
-	player.atlas[0] = {"Images/Agatha/w1.bmp","Images/Agatha/w2.bmp","Images/Agatha/w3.bmp","Images/Agatha/w4.bmp","Images/Agatha/w5.bmp"};
-	player.atlas[1] = {"Images/Agatha/wd1.bmp","Images/Agatha/wd2.bmp","Images/Agatha/wd3.bmp","Images/Agatha/wd4.bmp","Images/Agatha/wd5.bmp"};
-	player.atlas[2] = {"Images/Agatha/d1.bmp","Images/Agatha/d2.bmp","Images/Agatha/d3.bmp","Images/Agatha/d4.bmp","Images/Agatha/d5.bmp"};
-	player.atlas[3] = {"Images/Agatha/sd1.bmp","Images/Agatha/sd2.bmp","Images/Agatha/sd3.bmp","Images/Agatha/sd4.bmp","Images/Agatha/sd5.bmp"};
-	player.atlas[4] = {"Images/Agatha/s1.bmp","Images/Agatha/s2.bmp","Images/Agatha/s3.bmp","Images/Agatha/s4.bmp","Images/Agatha/s5.bmp"};
-	player.atlas[5] = {"Images/Agatha/sa1.bmp","Images/Agatha/sa2.bmp","Images/Agatha/sa3.bmp","Images/Agatha/sa4.bmp","Images/Agatha/sa5.bmp"};
-	player.atlas[6] = {"Images/Agatha/a1.bmp","Images/Agatha/a2.bmp","Images/Agatha/a3.bmp","Images/Agatha/a4.bmp","Images/Agatha/a5.bmp"};
-	player.atlas[7] = {"Images/Agatha/wa1.bmp","Images/Agatha/wa2.bmp","Images/Agatha/wa3.bmp","Images/Agatha/wa4.bmp","Images/Agatha/wa5.bmp"};
-	enmyatlas[0] = {"Images/Fantasma/w1.bmp","Images/Fantasma/w2.bmp","Images/Fantasma/w3.bmp","Images/Fantasma/w4.bmp","Images/Fantasma/w5.bmp"};
-	enmyatlas[1] = {"Images/Fantasma/wd1.bmp","Images/Fantasma/wd2.bmp","Images/Fantasma/wd3.bmp","Images/Fantasma/wd4.bmp","Images/Fantasma/wd5.bmp"};
-	enmyatlas[2] = {"Images/Fantasma/d1.bmp","Images/Fantasma/d2.bmp","Images/Fantasma/d3.bmp","Images/Fantasma/d4.bmp","Images/Fantasma/d5.bmp"};
-	enmyatlas[3] = {"Images/Fantasma/sd1.bmp","Images/Fantasma/sd2.bmp","Images/Fantasma/sd3.bmp","Images/Fantasma/sd4.bmp","Images/Fantasma/sd5.bmp"};
-	enmyatlas[4] = {"Images/Fantasma/s1.bmp","Images/Fantasma/s2.bmp","Images/Fantasma/s3.bmp","Images/Fantasma/s4.bmp","Images/Fantasma/s5.bmp"};
-	enmyatlas[5] = {"Images/Fantasma/sa1.bmp","Images/Fantasma/sa2.bmp","Images/Fantasma/sa3.bmp","Images/Fantasma/sa4.bmp","Images/Fantasma/sa5.bmp"};
-	enmyatlas[6] = {"Images/Fantasma/a1.bmp","Images/Fantasma/a2.bmp","Images/Fantasma/a3.bmp","Images/Fantasma/a4.bmp","Images/Fantasma/a5.bmp"};
-	enmyatlas[7] = {"Images/Fantasma/wa1.bmp","Images/Fantasma/wa2.bmp","Images/Fantasma/wa3.bmp","Images/Fantasma/wa4.bmp","Images/Fantasma/wa5.bmp"};
+	initwindow(res[0],res[1],"Ghostly Mansion");
+	load_img();
 	//Play stuff===========================================================================================
 	cleardevice();
 	fase = 0;
 	bool playing = true;
 	int wn = 30;
+	int k,l;
     while(playing){
     	printf("Estou aqui agora\n");
     	/*printf("Digite a fase desejada: ");
@@ -545,7 +576,7 @@ int main(){
 	    		printf("Check\n");
 	    		cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(wn ,10, 4, 2048, 800, 2048, 256, "Images/Background/dungeon_chao.bmp", "Images/Background/dungeon_parede.bmp");	
+	    		game(wn ,10, 4, 2048, 800, 2048, 256, (char*)"Images/Background/dungeon_chao.bmp",(char*) "Images/Background/dungeon_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 3;
@@ -570,7 +601,7 @@ int main(){
 			case 4:
 				cicles = 0;
 				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(wn ,20, 6, 2048, 1600, 2048, 256, "Images/Background/biblioteca_chao.bmp", "Images/Background/biblioteca_parede.bmp");	
+	    		game(wn ,20, 6, 2048, 1600, 2048, 256, (char*)"Images/Background/biblioteca_chao.bmp", (char*)"Images/Background/biblioteca_parede.bmp");	
 				enmy = NULL;
 				if (result == true){
 					fase = 5;
@@ -602,7 +633,7 @@ int main(){
 				enmy = (enemy*)realloc(enmy,15*sizeof(enemy));
 			    bac.chao.larg = res[1];
 			    bac.chao.alt = res[1];
-			    bac.chao.imagem = "Images/background/hall.bmp";
+			    bac.chao.imagem = (char*)"Images/background/hall.bmp";
 			    limite = res[1]-(320*bac.chao.alt/2048);
 			    player.pos.x = (int)(res[0]/2);// Mudar
 			   	player.pos.y = bac.chao.alt-((bac.chao.alt-limite)/2);// Mudar
@@ -642,7 +673,7 @@ int main(){
 			    				ca = player.pos.x-enmy[index].posi.x;
 			    				co = player.pos.y-enmy[index].posi.y;
 			    				hi = (int)sqrt((co*co)+(ca*ca));
-			    				enmy[index].posi.walkingangle = (int)(acos((float)ca/(float)hi)*((float)180/(float)3.14159265359));
+			    				enmy[index].posi.walkingangle = (int)(acos((double)ca/(double)hi)*((double)180/(double)3.14159265359));
 			    				if(enmy[index].posi.walkingangle<0){
 			    					enmy[index].posi.walkingangle+=180;
 								}
@@ -856,10 +887,12 @@ int main(){
 				        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
 				        fillpoly(4,flash);
 				        if(player.moving){
-				        	readimagefile(player.atlas[player.pos.direction][cicles%5],player.pos.x-player.tamanho,player.pos.y-player.tamanho,player.pos.x+player.tamanho,player.pos.y+player.tamanho);
+				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
+							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][cicles%5],OR_PUT);
 						}
-			    		else{
-			    			readimagefile(player.atlas[player.pos.direction][0],player.pos.x-player.tamanho,player.pos.y-player.tamanho,player.pos.x+player.tamanho,player.pos.y+player.tamanho);
+						else{
+							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][0],AND_PUT);
+							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][0],OR_PUT);
 						}
 			    		readimagefile(bossatlas[boss.pos.direction],boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.pos.x+boss.tamanho,boss.pos.y+boss.tamanho);
 			    		setfillstyle(1,RGB(0,0,255));
@@ -896,8 +929,6 @@ int main(){
 				enmy = NULL;
 				free(enmy);
 				delete enmy;
-				free(enmyatlas);
-				delete enmyatlas;
 				break;
 				}
 			case 7:
@@ -911,6 +942,7 @@ int main(){
 	    		delay(5000);
 	    		getch();
 	    		fase = 0;
+	    		wn = 30;
 	    		break;
 			case 8:{
 				//playing = false;
@@ -921,11 +953,20 @@ int main(){
 				delay(5000);
 				getch();
 				fase = 0;
+				wn = 30;
 				break;
 			}	
 		}
 	}
 	cleardevice();
+	for(k=0;k<8;k++){
+		for(l=0;l<5;l++){
+			free(player.atlas[k][l]);
+			free(player.mask[k][l]);
+			free(enmymask[k][l]);
+			free(enmyatlas[k][l]);
+		}
+	}
 	printf("\n");
 	system("pause");
 }
