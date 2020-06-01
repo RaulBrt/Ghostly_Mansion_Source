@@ -8,7 +8,7 @@ int res[2] = {1600,900}; 					//Tamanho da tela em pixeis
 //Structfy stuff=======================================================
 struct player{ 										//Struct para organizar as variaveis do jogador
 	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
-	bool key,moving;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
+	bool key,moving,loss;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
 	void *atlas[8][5];	
 	void *mask[8][5];							//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
     struct pos{											//Struct para organizar as variaveis de posição do jogador
@@ -24,17 +24,18 @@ struct enemy{										//Struct para organizar as variaveis dos inimigos
 		int tamanho,speed;								//Variaveis para guardar o tamanho da imagem e a vida do inimigo
 		float health;									//Variavel para guardar a velocidade que o inimigo anda
 		bool spawned;
-								//Variavel para saber se o inimigo já está na tela
 		struct pos{										//Struct para organizar as variaveis de posição do inimigo
-				int x,y,angle,hitangle,walkingangle,direction;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
-				int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
-				float relx,rely;							//Variaveis para guardar as coordenadas x,y em relação ao canto superior esquerdo do mapa
+			int x,y,angle,hitangle,walkingangle,direction;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
+			int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
+			float relx,rely;							//Variaveis para guardar as coordenadas x,y em relação ao canto superior esquerdo do mapa
 		};
 	pos posi;											//Criar o objeto posi que referencia a struct posi
 };
 struct boss{
 	int tamanho,health,aggro;
-	float speed;	
+	float speed;
+	void *img[8][4];
+	void *mask[8][4];	
 	struct pos{				
 		int x,y,angle,hitangle,walkingangle,direction;
 		int hit[2];
@@ -64,6 +65,8 @@ struct battery{										//Struct para organizar as variaveis das baterias
 struct key{											//Struct para organizar as variaveis da chave
 	bool spawned;										//Variavel para se se a chave já está na tela
 	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da chave
+	void *img;
+	void *mask;
 };
 //Define Global Stuff===================================================================
 int num,ca,pg,index;
@@ -77,6 +80,11 @@ double co;
 unsigned long long int cicles = 0;
 void *enmyatlas[8][5];
 void *enmymask[8][5];
+void *btrimg;
+void *btrmask;
+void *fbimg[5];
+void *fbmask[5];
+void *back[5];
 int flash[8];
 int chance;
 int fase = 0;
@@ -135,9 +143,12 @@ void mask(int left, int top, int right, int bottom){
 	fillpoly(5,points);
 }
 void load_img(){
+	initwindow(2048,2048);
 	int i,j;
 	int tam = imagesize(0,0,player.tamanho*2,player.tamanho*2);
-	readimagefile("Images/Agatha/bitmap.bmp",0,0,480,768);
+	setvisualpage(1);
+	setactivepage(2);
+	readimagefile("Images/Agatha/bitmap.bmp",0,0,player.tamanho*10,player.tamanho*16);
 	for(i=0;i<8;i++){
 		for(j=0;j<5;j++){
 			player.atlas[i][j] = malloc(tam);
@@ -145,7 +156,7 @@ void load_img(){
 		}
 	}
 	cleardevice();
-	readimagefile("Images/Agatha/bitmap_mask.bmp",0,0,480,768);
+	readimagefile("Images/Agatha/bitmap_mask.bmp",0,0,player.tamanho*10,player.tamanho*16);
 	for(i=0;i<8;i++){
 		for(j=0;j<5;j++){
 			player.mask[i][j] = malloc(tam);
@@ -157,7 +168,6 @@ void load_img(){
 	readimagefile("Images/Fantasma/bitmap.bmp",0,0,480,768);
 	for(i=0;i<8;i++){
 		for(j=0;j<5;j++){
-			printf("load_img\n");
 			enmyatlas[i][j] = malloc(tam);
 			getimage(j*96,i*96,(j+1)*96,(i+1)*96,enmyatlas[i][j]);
 			
@@ -171,10 +181,83 @@ void load_img(){
 			getimage(j*96,i*96,(j+1)*96,(i+1)*96,enmymask[i][j]);
 		}
 	}
-	
+	cleardevice();
+	tam = imagesize(0,0,96,96);
+	readimagefile("Images/Objetos/Bateria.bmp",0,0,48,48);
+	btrimg= malloc(tam);
+	getimage(0,0,48,48,btrimg);
+	cleardevice();
+	readimagefile("Images/Objetos/Bateria_mask.bmp",0,0,48,48);
+	btrmask= malloc(tam);
+	getimage(0,0,48,48,btrmask);
+	cleardevice();
+	tam = imagesize(0,0,key.tamanho,key.tamanho);
+	readimagefile("Images/Objetos/Chave.bmp",0,0,key.tamanho,key.tamanho);
+	key.img= malloc(tam);
+	getimage(0,0,key.tamanho,key.tamanho,key.img);
+	cleardevice();
+	readimagefile("Images/Objetos/Chave_mask.bmp",0,0,key.tamanho,key.tamanho);
+	key.mask= malloc(tam);
+	getimage(0,0,key.tamanho,key.tamanho,key.mask);
+	cleardevice();
+	tam = imagesize(0,0,boss.tamanho*2,boss.tamanho*2);
+	readimagefile("Images/Boss/bitmap.bmp",0,0,512,1024);
+	for(i=0;i<8;i++){
+		for(j=0;j<4;j++){
+			boss.img[i][j] = malloc(tam);
+			getimage(j*boss.tamanho*2,i*boss.tamanho*2,(j+1)*boss.tamanho*2,(i+1)*boss.tamanho*2,boss.img[i][j]);
+		}
+	}
+	cleardevice();
+	readimagefile("Images/Boss/bitmap_mask.bmp",0,0,512,1024);
+	for(i=0;i<8;i++){
+		for(j=0;j<4;j++){
+			boss.mask[i][j] = malloc(tam);
+			getimage(j*boss.tamanho*2,i*boss.tamanho*2,(j+1)*boss.tamanho*2,(i+1)*boss.tamanho*2,boss.mask[i][j]);
+		}
+	}
+	cleardevice();
+	tam = imagesize(0,0,64,64);
+	readimagefile("Images/Boss/Fireball/bitmap.bmp",0,0,320,64);
+	for(i=0;i<5;i++){
+		fbimg[i] = malloc(tam);
+		getimage(i*64,0,(i+1)*64,64,fbimg[i]);
+	}
+	cleardevice();
+	readimagefile("Images/Boss/Fireball/bitmap_mask.bmp",0,0,320,64);
+	for(i=0;i<5;i++){
+		fbmask[i] = malloc(tam);
+		getimage(i*64,0,(i+1)*64,64,fbmask[i]);
+	}
+	cleardevice();
+	tam = imagesize(0,0,2048,256);
+	readimagefile("Images/Background/dungeon_parede.bmp",0,0,2048,256);
+	back[0] = malloc(tam);
+	getimage(0,0,2048,256,back[0]);
+	cleardevice();
+	tam = imagesize(0,0,2048,800);
+	readimagefile("Images/Background/dungeon_chao.bmp",0,0,2048,800);
+	back[1] = malloc(tam);
+	getimage(0,0,2048,800,back[1]);
+	cleardevice();
+	tam = imagesize(0,0,2048,256);
+	readimagefile("Images/Background/biblioteca_parade.bmp",0,0,2048,256);
+	back[2] = malloc(tam);
+	getimage(0,0,2048,256,back[2]);
+	cleardevice();
+	tam = imagesize(0,0,2048,1600);
+	readimagefile("Images/Background/biblioteca_chao.bmp",0,0,2048,1600);
+	back[3] = malloc(tam);
+	getimage(0,0,2048,1600,back[3]);
+	cleardevice();
+	tam = imagesize(0,0,res[1],res[1]);
+	readimagefile("Images/Background/hall.bmp",0,0,res[1],res[1]);
+	back[4] = malloc(tam);
+	getimage(0,0,res[1],res[1],back[4]);
+	closegraph();
 }
 
-bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, char* chao, char* parede){
+bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, int level){
 	done = false;
 	player.lanterna.alcance = 450;
 	player.pos.angle = 270;
@@ -184,17 +267,17 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	for (index = 0;index < num; index++){
     	    enmy[index].spawned = 0;
     	    enmy[index].speed = speed;
+    	    enmy[index].tamanho = 48;
 	}
 	for(index = 0; index < 2; index++){
 		battery[index].spawned = 0;
+		battery[index].tamanho = 48;
 	}
 	key.spawned = false;
     bac.chao.larg = chaox;//2046
     bac.chao.alt = chaoy;//1600
     bac.parede.alt = pary;//256
     bac.parede.larg = parx;//2048
-    bac.chao.imagem = chao;
-    bac.parede.imagem = parede;
 	player.pos.x = (int)(res[0]/2);
 	player.pos.y = (int)(res[1]/2);	
     player.key = false;
@@ -235,7 +318,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			}	
 			//Mechanics Stuff==================================================================================
 			if(cicles%5== 0){
-				if(player.lanterna.alcance>=0){
+				if(player.lanterna.alcance>=0 && player.loss){
 					player.lanterna.alcance-=1;
 				}
 			}
@@ -385,7 +468,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 		        	printf("Score: %d\n",player.score);
 		        	
 				}
-				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned){
+				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned && player.loss){
 					if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 						if(player.lanterna.alcance > 0){
 								player.lanterna.alcance-=25;
@@ -416,7 +499,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	    			player.key = true;
 				}
 	        //Draw stuff=======================================================================================
-	        readimagefile(bac.chao.imagem,bac.pos.x,bac.pos.y,bac.chao.larg+bac.pos.x,bac.chao.alt+bac.pos.y);
+	        putimage(bac.pos.x,bac.pos.y,back[level+1],0);
 	        setcolor(RGB(255,255,0));
 	        setfillstyle(1,RGB(255,255,0));
 	        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
@@ -430,22 +513,24 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			}
 			for(index=0;index < 2; index++){
 				if(battery[index].spawned == true){
-					readimagefile("Images/Objetos/Bateria.bmp",battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),battery[index].x+(battery[index].tamanho/2),battery[index].y+(battery[index].tamanho/2));
+					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrmask,AND_PUT);
+					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
 						
 				}
 			}
 			if(key.spawned == true){
-				readimagefile("Images/Objetos/Chave.bmp",key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.x+(key.tamanho/2),key.y+(key.tamanho/2));
+				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.mask,AND_PUT);
+				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.img,OR_PUT);
 			}
 			if(player.moving){
-				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
-				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][cicles%5],OR_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][cicles%5],AND_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.atlas[player.pos.direction][cicles%5],OR_PUT);
 			}
 			else{
-				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][0],AND_PUT);
-				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][0],OR_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][0],AND_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.atlas[player.pos.direction][0],OR_PUT);
 			}
-			readimagefile(bac.parede.imagem,bac.pos.x,bac.pos.y-bac.parede.alt,bac.parede.larg+bac.pos.x,bac.pos.y);
+			putimage(bac.pos.x,bac.pos.y-bac.parede.alt,back[level],0);
 			mask(bac.pos.x,bac.pos.y-bac.parede.alt,bac.pos.x+bac.parede.larg,bac.pos.y+bac.chao.alt);
 	        //Win/Lose Stuff=========================================================================================
 	        if(player.lanterna.alcance <= 0){
@@ -476,20 +561,16 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 }
 //Actual code stuff========================================================
 int main(){	
+	//Define stuff===========================================================================================
 	player.lanterna.angle = 30;
 	player.pos.angle = 270;
 	player.tamanho = 48;
-	for(index = 0; index < 2; index++){
-		battery[index].tamanho = 48;
-	}
+	player.loss = true;
 	key.tamanho = 64;
-	for (index = 0;index < num; index++){
-    	    enmy[index].tamanho = 48;
-	}
+	boss.tamanho = 64;
 	srand((unsigned)time(NULL));
-	//Define stuff===========================================================================================
-	initwindow(res[0],res[1],"Ghostly Mansion");
 	load_img();
+	initwindow(res[0],res[1],"Ghostly Mansion");
 	//Play stuff===========================================================================================
 	cleardevice();
 	fase = 0;
@@ -558,7 +639,12 @@ int main(){
 			    			scanf("%d",&wn);
 							break;
 						}
-						else if (strcmp(cheat, "Sp3ctr3") == 1 && strcmp(cheat, "Ap0cryph4") == 1) {
+						else if (strcmp(cheat, "4ch1ll3s") == 0){
+							printf("Invulnerabilidade\n ");
+			    			player.loss = false;
+							break;
+						}
+						else {
 							cheat = {};
 						}
 					}
@@ -575,8 +661,7 @@ int main(){
 	    	case 2:{
 	    		printf("Check\n");
 	    		cicles = 0;
-				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(wn ,10, 4, 2048, 800, 2048, 256, (char*)"Images/Background/dungeon_chao.bmp",(char*) "Images/Background/dungeon_parede.bmp");	
+	    		game(wn ,10, 4, 2048, 800, 2048, 256, 0);	
 				enmy = NULL;
 				if (result == true){
 					fase = 3;
@@ -600,8 +685,7 @@ int main(){
 
 			case 4:
 				cicles = 0;
-				//int bg[10] = {0,0,1000,0,1000,1000,0,1000,0,0};
-	    		game(wn ,20, 6, 2048, 1600, 2048, 256, (char*)"Images/Background/biblioteca_chao.bmp", (char*)"Images/Background/biblioteca_parede.bmp");	
+	    		game(wn ,20, 6, 2048, 1600, 2048, 256,2);	
 				enmy = NULL;
 				if (result == true){
 					fase = 5;
@@ -621,10 +705,7 @@ int main(){
 	    		fase = 6;
 	    		break;
 			case 6: //Chefão
-			{	
-				char fireball[4][30]={"Images/Boss/Fireball/1.bmp","Images/Boss/Fireball/2.bmp","Images/Boss/Fireball/3.bmp","Images/Boss/Fireball/4.bmp"};
-				char bossatlas[8][30]={"Images/Boss/w.bmp","Images/Boss/wd.bmp","Images/Boss/d.bmp","Images/Boss/sd.bmp","Images/Boss/s.bmp","Images/Boss/sa.bmp","Images/Boss/a.bmp","Images/Boss/wa.bmp"};
-				printf("Check\n");
+			{
 				int limite,hi;
 				for(index = 0; index < 2; index++){
 					battery[index].spawned = 0;
@@ -633,17 +714,15 @@ int main(){
 				enmy = (enemy*)realloc(enmy,15*sizeof(enemy));
 			    bac.chao.larg = res[1];
 			    bac.chao.alt = res[1];
-			    bac.chao.imagem = (char*)"Images/background/hall.bmp";
 			    limite = res[1]-(320*bac.chao.alt/2048);
 			    player.pos.x = (int)(res[0]/2);// Mudar
 			   	player.pos.y = bac.chao.alt-((bac.chao.alt-limite)/2);// Mudar
 			    player.lanterna.alcance = 450;
 			    player.lanterna.angle = 30;
 			    player.pos.angle = 270;
-			    player.tamanho = 32;
+			    player.tamanho = 48;
 			    bac.pos.x = (int)(res[0]-res[1])/2;
 			    bac.pos.y = 0;
-			    boss.tamanho = 64;
 			    boss.pos.x = res[0]/2;
 			    boss.pos.y = res[1]/2;
 			    boss.speed = 5;
@@ -662,6 +741,12 @@ int main(){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
 			    		setactivepage(pg);
 			    		cleardevice();
+			    		//Mechanics Stuff======================================================================================
+			    		if(cicles%5== 0){
+							if(player.lanterna.alcance>=0 && player.loss){
+								player.lanterna.alcance-=1;
+							}
+						}
 			    		//Spawn Stuff======================================================================================
 			    		for(index = 0 ; index < num; index++){
 			    			chance = rand()%500;
@@ -677,8 +762,6 @@ int main(){
 			    				if(enmy[index].posi.walkingangle<0){
 			    					enmy[index].posi.walkingangle+=180;
 								}
-			    				//enmy[index].posi.walkingangle+=180;
-								
 								enmy[index].spawned = true;
 							}
 						}
@@ -848,9 +931,9 @@ int main(){
 				        	num = 15;
 				        	boss.speed = 10;
 						}
-				        if(player.pos.x-player.tamanho<=boss.pos.x+boss.tamanho && player.pos.x+player.tamanho >= boss.pos.x-boss.tamanho){
+				        if(player.pos.x-player.tamanho<=boss.pos.x+boss.tamanho && player.pos.x+player.tamanho >= boss.pos.x-boss.tamanho && player.loss){
 				        	if(player.pos.y-player.tamanho<=boss.pos.y+boss.tamanho && player.pos.y+player.tamanho >= boss.pos.y-boss.tamanho){
-				        		player.lanterna.alcance-=5;
+				        		player.lanterna.alcance-=7;
 							}
 						}
 						for (index = 0;index < num;index++){
@@ -858,7 +941,7 @@ int main(){
 								if(enmy[index].posi.y >= res[1]){
 									enmy[index].spawned = false;
 								}
-								if(enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho ){
+								if(enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho && player.loss){
 									if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 										enmy[index].spawned = false;
 										player.lanterna.alcance-=30;
@@ -880,7 +963,7 @@ int main(){
 						}
 						
 			    		//Drawstuff=====================================================================================
-			    		readimagefile(bac.chao.imagem,bac.pos.x,bac.pos.y,bac.chao.larg+bac.pos.x,bac.chao.alt+bac.pos.y);
+			    		putimage(bac.pos.x,bac.pos.y,back[4],0);
 			    		setcolor(RGB(255,255,0));
 				        setfillstyle(1,RGB(255,255,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
@@ -894,17 +977,19 @@ int main(){
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][0],AND_PUT);
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][0],OR_PUT);
 						}
-			    		readimagefile(bossatlas[boss.pos.direction],boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.pos.x+boss.tamanho,boss.pos.y+boss.tamanho);
+			    		putimage(boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.mask[boss.pos.direction][cicles%4],AND_PUT);
+			    		putimage(boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.img[boss.pos.direction][cicles%4],OR_PUT);
 			    		setfillstyle(1,RGB(0,0,255));
 			    		for(index = 0; index < num; index++){
 			    			if(enmy[index].spawned == true){
-			    				readimagefile(fireball[cicles%4],enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmy[index].posi.x+enmy[index].tamanho,enmy[index].posi.y+enmy[index].tamanho);
+			    				putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,fbmask[(cicles+index)%5],AND_PUT);
+			    				putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,fbimg[(cicles+index)%5],OR_PUT);
 							}
 						}
 						for(index=0;index < 2; index++){
 							if(battery[index].spawned == true){
-								readimagefile("Images/Objetos/Bateria.bmp",battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),battery[index].x+(battery[index].tamanho/2),battery[index].y+(battery[index].tamanho/2));
-									
+								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrmask,AND_PUT);
+								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
 							}
 						}
 						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
@@ -935,14 +1020,15 @@ int main(){
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut4.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
-	    		delay(5000);
+	    		delay(1000);
 	    		setactivepage(2);
 	    		readimagefile("Images/Cutscenes/cut5.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(2);
-	    		delay(5000);
+	    		delay(1000);
 	    		getch();
 	    		fase = 0;
 	    		wn = 30;
+	    		player.loss = true;
 	    		break;
 			case 8:{
 				//playing = false;
@@ -954,6 +1040,7 @@ int main(){
 				getch();
 				fase = 0;
 				wn = 30;
+				player.loss = true;
 				break;
 			}	
 		}
@@ -967,6 +1054,23 @@ int main(){
 			free(enmyatlas[k][l]);
 		}
 	}
+	for(k=0;k<8;k++){
+		for(l=0;l<4;l++){
+			free(boss.img[k][l]);
+			free(boss.mask[k][l]);
+		}
+	}
+	for(l=0;l<4;l++){
+		free(fbimg[l]);
+		free(fbmask[l]);
+	}
+	for(l=0;l<4;l++){
+		free(back[l]);
+	}
+	free(btrimg);
+	free(btrmask);
+	free(key.img);
+	free(key.mask);
 	printf("\n");
 	system("pause");
 }
