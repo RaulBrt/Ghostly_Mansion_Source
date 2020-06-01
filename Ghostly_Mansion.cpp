@@ -4,7 +4,7 @@
 #include <graphics.h>	//
 #include <time.h>		//
 static double conv = (3.14159265359/180); 	//Fator de conversão de graus para radianos
-int res[2] = {1600,900}; 					//Tamanho da tela em pixeis
+int res[2] = {getmaxwidth(),getmaxheight()}; 					//Tamanho da tela em pixeis
 //Structfy stuff=======================================================
 struct player{ 										//Struct para organizar as variaveis do jogador
 	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
@@ -89,6 +89,7 @@ int flash[8];
 int chance;
 int fase = 0;
 bool done,result;
+clock_t start;
 player player;
 enemy *enmy;
 battery battery[2];
@@ -288,6 +289,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	printf("Primeira cutscene...\n");
 	while(!done){
 		for(pg = 1; pg<=2;pg++){
+			start = clock();
 			setactivepage(pg);
 			cleardevice();
 			//Spawn stuff=======================================================================================
@@ -471,7 +473,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned && player.loss){
 					if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 						if(player.lanterna.alcance > 0){
-								player.lanterna.alcance-=25;
+								player.lanterna.alcance-=15;
 						}
 					}
 				}
@@ -487,8 +489,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	    			printf("Spawn bateria %d: %d\n",index,battery[index].spawned);
 				}
 			}
-			if(player.lanterna.alcance>450){
-	    		player.lanterna.alcance=450;
+			if(player.lanterna.alcance>500){
+	    		player.lanterna.alcance=500;
 			}
 			if(key.spawned == true && key.relx >= player.pos.relx-player.tamanho && key.relx <= player.pos.relx+player.tamanho && key.rely >= player.pos.rely-player.tamanho && key.rely <= player.pos.rely+player.tamanho){
 					key.spawned = false;
@@ -556,6 +558,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	        if(cicles >= 65534){
 	        	cicles = 0;
 			}
+			while((double)(clock()-start)<34){
+			}
 		}
 	}
 }
@@ -569,6 +573,8 @@ int main(){
 	key.tamanho = 64;
 	boss.tamanho = 64;
 	srand((unsigned)time(NULL));
+	int gdriver = DETECT, gmode;
+	initgraph(&gdriver, &gmode, "");
 	load_img();
 	initwindow(res[0],res[1],"Ghostly Mansion");
 	//Play stuff===========================================================================================
@@ -739,6 +745,7 @@ int main(){
 			    cicles = 0;
 			    while(fase == 6){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
+			    		start = clock();
 			    		setactivepage(pg);
 			    		cleardevice();
 			    		//Mechanics Stuff======================================================================================
@@ -1008,6 +1015,8 @@ int main(){
 			    		//delay(50);
 			    		if(cicles >= 65534){
 				        	cicles = 0;
+						}
+						while((double)(clock()-start)<34){
 						}
 					}
 				}
