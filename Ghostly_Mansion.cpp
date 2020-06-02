@@ -88,7 +88,7 @@ void *back[5];
 int flash[8];
 int chance;
 int fase = 0;
-bool done,result;
+bool done,result,pausa;
 clock_t start;
 player player;
 enemy *enmy;
@@ -126,21 +126,55 @@ void spawnenemies(int enem){														//Função para fazer inimigos aparecere
 		enmy[enem].posi.walkingangle = rand()%360;
     	enmy[enem].spawned = 1;
     	enmy[enem].health = 50;
-    	//printf("enmy[%d] Spawnou\n",enem);
 	}
-	//printf("Inimigo %d: posicao x: %d, posicao y: %d, spawn: %d\n",enem,enmy[enem].posi.relx,enmy[enem].posi.rely,enmy[enem].spawned);
 }
 void mask(int left, int top, int right, int bottom){
 	int points[10];
 	setfillstyle(1,RGB(0,0,0));
 	setcolor(RGB(0,0,0));
-	points = {0,0,0,res[1],left,res[1],left,0,0,0};
+	points[0] = 0;
+	points[1] = 0;
+	points[2] = 0;
+	points[3] = res[1];
+	points[4] = left;
+	points[5] = res[1];
+	points[6] = left;
+	points[7] = 0;
+	points[8] = 0;
+	points[9] = 0;
 	fillpoly(5,points);
-	points = {0,0,0,top,res[0],top,res[0],0,0,0};
+	points[0] = 0;
+	points[1] = 0;
+	points[2] = 0;
+	points[3] = top;
+	points[4] = res[0];
+	points[5] = top;
+	points[6] = res[0];
+	points[7] = 0;
+	points[8] = 0;
+	points[9] = 0;
 	fillpoly(5,points);
-	points = {0,bottom,0,res[1],res[0],res[1],res[0],bottom,0,bottom};
+	points[0] = 0;
+	points[1] = bottom;
+	points[2] = 0;
+	points[3] = res[1];
+	points[4] = res[0];
+	points[5] = res[1];
+	points[6] = res[0];
+	points[7] = bottom;
+	points[8] = 0;
+	points[9] = bottom;
 	fillpoly(5,points);
-	points = {right,0,right,res[1],res[0],res[1],res[0],0,0,0};
+	points[0] = right;
+	points[1] = 0;
+	points[2] = right;
+	points[3] = res[1];
+	points[4] = res[0];
+	points[5] = res[1];
+	points[6] = res[0];
+	points[7] = 0;
+	points[8] = 0;
+	points[9] = 0;
 	fillpoly(5,points);
 }
 void load_img(){
@@ -165,21 +199,21 @@ void load_img(){
 		}
 	}
 	cleardevice();
-	tam = imagesize(0,0,96,96);
-	readimagefile("Images/Fantasma/bitmap.bmp",0,0,480,768);
+	tam = imagesize(0,0,128,128);
+	readimagefile("Images/Fantasma/bitmap.bmp",0,0,640,1024);
 	for(i=0;i<8;i++){
 		for(j=0;j<5;j++){
 			enmyatlas[i][j] = malloc(tam);
-			getimage(j*96,i*96,(j+1)*96,(i+1)*96,enmyatlas[i][j]);
+			getimage(j*128,i*128,(j+1)*128,(i+1)*128,enmyatlas[i][j]);
 			
 		}
 	}
 	cleardevice();
-	readimagefile("Images/Fantasma/bitmap_mask.bmp",0,0,480,768);
+	readimagefile("Images/Fantasma/bitmap_mask.bmp",0,0,640,1024);
 	for(i=0;i<8;i++){
 		for(j=0;j<5;j++){
 			enmymask[i][j] = malloc(tam);
-			getimage(j*96,i*96,(j+1)*96,(i+1)*96,enmymask[i][j]);
+			getimage(j*128,i*128,(j+1)*128,(i+1)*128,enmymask[i][j]);
 		}
 	}
 	cleardevice();
@@ -259,6 +293,7 @@ void load_img(){
 }
 
 bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, int level){
+	pausa = false;
 	done = false;
 	player.lanterna.alcance = 450;
 	player.pos.angle = 270;
@@ -289,6 +324,12 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	printf("Primeira cutscene...\n");
 	while(!done){
 		for(pg = 1; pg<=2;pg++){
+			while(pausa){
+				if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+					pausa = !pausa;
+					delay(250);
+				}
+			}
 			start = clock();
 			setactivepage(pg);
 			cleardevice();
@@ -337,7 +378,10 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	    		enmy[index].posi.x = player.pos.x+(int)(enmy[index].posi.relx-player.pos.relx);
 	    		enmy[index].posi.y = player.pos.y+(int)(enmy[index].posi.rely-player.pos.rely);
 			}
-	    	
+	    	if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+					pausa = !pausa;
+					delay(250);
+			}
 	  		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.rely-player.tamanho > 0){
 	        	bac.pos.y+=5;
 	        	player.moving = true;
@@ -505,7 +549,14 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	        setcolor(RGB(255,255,0));
 	        setfillstyle(1,RGB(255,255,0));
 	        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
-	        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
+	        flash[0] = player.pos.x;
+			flash[1] = player.pos.y;
+			flash[2] = xpos;
+			flash[3] = ypos;
+			flash[4] = posx;
+			flash[5] = posy;
+			flash[6] = player.pos.x;
+			flash[7] = player.pos.y;
 	        fillpoly(4,flash);
 	  		for(index = 0;index < num; index++){
 		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
@@ -523,6 +574,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			if(key.spawned == true){
 				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.mask,AND_PUT);
 				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.img,OR_PUT);
+				
 			}
 			if(player.moving){
 				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][cicles%5],AND_PUT);
@@ -574,7 +626,7 @@ int main(){
 	boss.tamanho = 64;
 	srand((unsigned)time(NULL));
 	int gdriver = DETECT, gmode;
-	initgraph(&gdriver, &gmode, "");
+	initgraph(&gdriver, &gmode, (char*)"");
 	load_img();
 	initwindow(res[0],res[1],"Ghostly Mansion");
 	//Play stuff===========================================================================================
@@ -584,9 +636,6 @@ int main(){
 	int wn = 30;
 	int k,l;
     while(playing){
-    	printf("Estou aqui agora\n");
-    	/*printf("Digite a fase desejada: ");
-    	scanf("%d",&fase);*/
     	switch (fase){
 	    	case 0:{
 	    		printf("Menu\n");
@@ -612,11 +661,16 @@ int main(){
 									}
 								}
 							}
+							else if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								playing = false;
+								imagem = 3000;
+								break;
+							}
 						}
 						else if(imagem == 1){
-							if (GetAsyncKeyState(VK_LBUTTON) && 0x8000){
-								if(mousey()>=(970*res[1])/1080 && mousey()<=(1050*res[1])/1080){
-									if(mousex()>=(int)(1650*res[0])/1920 && mousex()<=(int)(1890*res[0])/1920){	
+							if ((GetAsyncKeyState(VK_LBUTTON) || GetAsyncKeyState(VK_ESCAPE)) && 0x8000){
+								if((mousey()>=(970*res[1])/1080 && mousey()<=(1050*res[1])/1080) || (GetAsyncKeyState(VK_ESCAPE) & 0x8000)){
+									if((mousex()>=(int)(1650*res[0])/1920 && mousex()<=(int)(1890*res[0])/1920) || (GetAsyncKeyState(VK_ESCAPE) & 0x8000)){	
 										imagem = 0;
 									}
 								}
@@ -651,7 +705,9 @@ int main(){
 							break;
 						}
 						else {
-							cheat = {};
+							for(k = 0; k<10; k++){
+								cheat[k] = '\0';
+							}
 						}
 					}
 				}
@@ -710,8 +766,7 @@ int main(){
 	    		getch();
 	    		fase = 6;
 	    		break;
-			case 6: //Chefão
-			{
+			case 6:{
 				int limite,hi;
 				for(index = 0; index < 2; index++){
 					battery[index].spawned = 0;
@@ -742,9 +797,16 @@ int main(){
 					enmy[index].spawned = false;
 					enmy[index].tamanho = 32;
 				}
+				pausa = false;
 			    cicles = 0;
 			    while(fase == 6){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
+				    	while(pausa){
+							if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								pausa = !pausa;
+								delay(250);
+							}
+						}
 			    		start = clock();
 			    		setactivepage(pg);
 			    		cleardevice();
@@ -790,7 +852,11 @@ int main(){
 						}
 			    		//Move Stuff=====================================================================================
 			    		player.moving = false;
-			    		if(kbhit()){
+			    		//if(kbhit()){
+			    			if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								pausa = !pausa;
+								delay(250);
+							}
 				    		if( (GetAsyncKeyState('W') & 0x8000) && player.pos.y-player.tamanho > limite){
 					        	player.pos.y-=5;
 					        	player.moving = true;
@@ -807,7 +873,7 @@ int main(){
 				        		player.pos.x+=5;
 				        		player.moving = true;
 							}
-						}
+						//}
 						ca = mousex()-player.pos.x;
 						co = mousey()-player.pos.y;
 						player.pos.angle = (int)(atan(co/ca)*(180/3.14159265359));
@@ -974,7 +1040,14 @@ int main(){
 			    		setcolor(RGB(255,255,0));
 				        setfillstyle(1,RGB(255,255,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
-				        flash={player.pos.x,player.pos.y,xpos,ypos,posx,posy,player.pos.x,player.pos.y};
+				        flash[0] = player.pos.x;
+						flash[1] = player.pos.y;
+						flash[2] = xpos;
+						flash[3] = ypos;
+						flash[4] = posx;
+						flash[5] = posy;
+						flash[6] = player.pos.x;
+						flash[7] = player.pos.y;
 				        fillpoly(4,flash);
 				        if(player.moving){
 				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
@@ -1081,5 +1154,5 @@ int main(){
 	free(key.img);
 	free(key.mask);
 	printf("\n");
-	system("pause");
+	//system("pause");
 }
