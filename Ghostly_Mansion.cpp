@@ -29,7 +29,7 @@ struct enemy{										//Struct para organizar as variaveis dos inimigos
 			int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
 			float relx,rely;							//Variaveis para guardar as coordenadas x,y em relação ao canto superior esquerdo do mapa
 		};
-	pos posi;											//Criar o objeto posi que referencia a struct posi
+	pos posi;											//Criar o objeto posi que referencia a struct pos
 };
 struct boss{
 	int tamanho,health,aggro;
@@ -88,7 +88,7 @@ void *back[5];
 int flash[8];
 int chance;
 int fase = 0;
-bool done,result,pausa;
+bool done,pausa;
 clock_t start;
 player player;
 enemy *enmy;
@@ -291,8 +291,8 @@ void load_img(){
 	getimage(0,0,res[1],res[1],back[4]);
 	closegraph();
 }
-
 bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, int level){
+	bool result;
 	pausa = false;
 	done = false;
 	player.lanterna.alcance = 450;
@@ -451,28 +451,28 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					}
 					enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
 			       	enmy[index].posi.rely+=sin(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
-			       	if(enmy[index].posi.angle > 69 && enmy[index].posi.angle <= 112){
+			       	if(enmy[index].posi.walkingangle > 69 && enmy[index].posi.walkingangle <= 112){
 						enmy[index].posi.direction = 4;
 					}
-					else if(enmy[index].posi.angle > 112 && enmy[index].posi.angle <= 157){
+					else if(enmy[index].posi.walkingangle > 112 && enmy[index].posi.walkingangle <= 157){
 						enmy[index].posi.direction = 5;
 					}
-					else if(enmy[index].posi.angle > 157 && enmy[index].posi.angle <= 202){
+					else if(enmy[index].posi.walkingangle > 157 && enmy[index].posi.walkingangle <= 202){
 						enmy[index].posi.direction = 6;
 					}
-					else if(enmy[index].posi.angle > 202 && enmy[index].posi.angle <= 247){
+					else if(enmy[index].posi.walkingangle > 202 && enmy[index].posi.walkingangle <= 247){
 						enmy[index].posi.direction = 7;
 					}
-					else if(enmy[index].posi.angle > 247 && enmy[index].posi.angle <= 292){
+					else if(enmy[index].posi.walkingangle > 247 && enmy[index].posi.walkingangle <= 292){
 						enmy[index].posi.direction = 0;
 					}
-					else if(enmy[index].posi.angle > 292 && enmy[index].posi.angle <= 337){
+					else if(enmy[index].posi.walkingangle > 292 && enmy[index].posi.walkingangle <= 337){
 						enmy[index].posi.direction = 1;
 					}			
-					else if((enmy[index].posi.angle > 337 && enmy[index].posi.angle <= 360) || (enmy[index].posi.angle > 0 && enmy[index].posi.angle <= 23)){
+					else if((enmy[index].posi.walkingangle > 337 && enmy[index].posi.walkingangle <= 360) || (enmy[index].posi.walkingangle > 0 && enmy[index].posi.walkingangle <= 23)){
 						enmy[index].posi.direction = 2;
 					}
-					else if(enmy[index].posi.angle > 23 && enmy[index].posi.angle <= 68){
+					else if(enmy[index].posi.walkingangle > 23 && enmy[index].posi.walkingangle <= 68){
 						enmy[index].posi.direction = 3;
 					}
 				}				
@@ -614,6 +614,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			}
 		}
 	}
+	return(result);
 }
 //Actual code stuff========================================================
 int main(){	
@@ -633,6 +634,7 @@ int main(){
 	cleardevice();
 	fase = 0;
 	bool playing = true;
+	bool resultado;
 	int wn = 30;
 	int k,l;
     while(playing){
@@ -723,12 +725,12 @@ int main(){
 	    	case 2:{
 	    		printf("Check\n");
 	    		cicles = 0;
-	    		game(wn ,10, 4, 2048, 800, 2048, 256, 0);	
+	    		resultado = game(wn ,10, 4, 2048, 800, 2048, 256, 0);	
 				enmy = NULL;
-				if (result == true){
+				if (resultado == true){
 					fase = 3;
 				}
-				if (result == false){
+				if (resultado == false){
 					fase = 8;
 					printf("%d\n",fase);					
 				}
@@ -739,7 +741,7 @@ int main(){
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
-	    		delay(5000);   		
+	    		delay(1000);   		
 				getch();
 	    		fase = 4;
 	    		break;
@@ -747,13 +749,13 @@ int main(){
 
 			case 4:
 				cicles = 0;
-	    		game(wn ,20, 6, 2048, 1600, 2048, 256,2);	
+	    		resultado = game(wn ,20, 6, 2048, 1600, 2048, 256,2);	
 				enmy = NULL;
-				if (result == true){
+				if (resultado == true){
 					fase = 5;
 					break;
 				}
-				else if(result == false){
+				else if(resultado == false){
 					fase = 8;
 					break;
 					
@@ -762,7 +764,7 @@ int main(){
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
-	    		delay(5000);
+	    		delay(1000);
 	    		getch();
 	    		fase = 6;
 	    		break;
@@ -1103,6 +1105,7 @@ int main(){
 	    		readimagefile("Images/Cutscenes/cut4.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		delay(1000);
+	    		getch();
 	    		setactivepage(2);
 	    		readimagefile("Images/Cutscenes/cut5.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(2);
@@ -1118,7 +1121,7 @@ int main(){
 				setactivepage(1);
 				readimagefile("Images/Cutscenes/over.bmp",0,0,res[0],res[1]);
 				setvisualpage(1);
-				delay(5000);
+				delay(1000);
 				getch();
 				fase = 0;
 				wn = 30;
