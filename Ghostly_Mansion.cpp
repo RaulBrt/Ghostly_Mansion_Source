@@ -291,6 +291,34 @@ void load_img(){
 	getimage(0,0,res[1],res[1],back[4]);
 	closegraph();
 }
+int check_direction(int angle){
+	int direction;
+    if(angle > 69 && angle <= 112){
+		direction = 4;
+	}
+	else if(angle > 112 && angle <= 157){
+		direction = 5;
+	}
+	else if(angle > 157 && angle <= 202){
+		direction = 6;
+	}
+	else if(angle > 202 && angle <= 247){
+		direction = 7;
+	}
+	else if(angle > 247 && angle <= 292){
+		direction = 0;
+	}
+	else if(angle > 292 && angle <= 337){
+		direction = 1;
+	}			
+	else if((angle > 337 && angle <= 360) || (angle > 0 && angle <= 23)){
+		direction = 2;
+	}
+	else if(angle > 23 && angle <= 68){
+		direction = 3;
+	}
+	return(direction);
+}
 bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, int level){
 	bool result;
 	pausa = false;
@@ -411,35 +439,12 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				player.pos.angle = 180;
 			}
 			if(player.pos.angle>359){
-	            player.pos.angle = 0;
-	        }
+		        player.pos.angle = 0;
+		    }
 			if(player.pos.angle<0){
-	            player.pos.angle = 359;
-	        }
-	        if(player.pos.angle > 69 && player.pos.angle <= 112){
-				player.pos.direction = 4;
-			}
-			else if(player.pos.angle > 112 && player.pos.angle <= 157){
-				player.pos.direction = 5;
-			}
-			else if(player.pos.angle > 157 && player.pos.angle <= 202){
-				player.pos.direction = 6;
-			}
-			else if(player.pos.angle > 202 && player.pos.angle <= 247){
-				player.pos.direction = 7;
-			}
-			else if(player.pos.angle > 247 && player.pos.angle <= 292){
-				player.pos.direction = 0;
-			}
-			else if(player.pos.angle > 292 && player.pos.angle <= 337){
-				player.pos.direction = 1;
-			}			
-			else if((player.pos.angle > 337 && player.pos.angle <= 360) || (player.pos.angle > 0 && player.pos.angle <= 23)){
-				player.pos.direction = 2;
-			}
-			else if(player.pos.angle > 23 && player.pos.angle <= 68){
-				player.pos.direction = 3;
-			}
+		        player.pos.angle = 359;
+		    }
+		    player.pos.direction = check_direction(player.pos.angle);
 			for(index = 0; index < num; index ++){
 				if(enmy[index].spawned == 1){
 					chance = rand()%3;
@@ -451,30 +456,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					}
 					enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
 			       	enmy[index].posi.rely+=sin(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
-			       	if(enmy[index].posi.walkingangle > 69 && enmy[index].posi.walkingangle <= 112){
-						enmy[index].posi.direction = 4;
-					}
-					else if(enmy[index].posi.walkingangle > 112 && enmy[index].posi.walkingangle <= 157){
-						enmy[index].posi.direction = 5;
-					}
-					else if(enmy[index].posi.walkingangle > 157 && enmy[index].posi.walkingangle <= 202){
-						enmy[index].posi.direction = 6;
-					}
-					else if(enmy[index].posi.walkingangle > 202 && enmy[index].posi.walkingangle <= 247){
-						enmy[index].posi.direction = 7;
-					}
-					else if(enmy[index].posi.walkingangle > 247 && enmy[index].posi.walkingangle <= 292){
-						enmy[index].posi.direction = 0;
-					}
-					else if(enmy[index].posi.walkingangle > 292 && enmy[index].posi.walkingangle <= 337){
-						enmy[index].posi.direction = 1;
-					}			
-					else if((enmy[index].posi.walkingangle > 337 && enmy[index].posi.walkingangle <= 360) || (enmy[index].posi.walkingangle > 0 && enmy[index].posi.walkingangle <= 23)){
-						enmy[index].posi.direction = 2;
-					}
-					else if(enmy[index].posi.walkingangle > 23 && enmy[index].posi.walkingangle <= 68){
-						enmy[index].posi.direction = 3;
-					}
+			       	enmy[index].posi.direction = check_direction(enmy[index].posi.walkingangle);
 				}				
 			}
 			for(index=0;index<2;index++){
@@ -770,6 +752,7 @@ int main(){
 	    		break;
 			case 6:{
 				int limite,hi;
+				double tg;
 				for(index = 0; index < 2; index++){
 					battery[index].spawned = 0;
 					battery[index].tamanho = 48;
@@ -877,8 +860,14 @@ int main(){
 							}
 						//}
 						ca = mousex()-player.pos.x;
+						if(ca < 1 && ca > -1){
+							ca = 1;
+						} 
 						co = mousey()-player.pos.y;
 						player.pos.angle = (int)(atan(co/ca)*(180/3.14159265359));
+						if (player.pos.angle == 0){
+							player.pos.angle +=1;
+						}
 						if (player.pos.angle<0){
 							player.pos.angle+=180;
 						}
@@ -886,38 +875,15 @@ int main(){
 							player.pos.angle+=180;
 						}
 						if(mousex()<player.pos.x && mousey() == player.pos.y){
-							player.pos.angle = 180;
+							player.pos.angle = 181;
 						}
 						if(player.pos.angle>359){
-				            player.pos.angle = 0;
+				            player.pos.angle = 1;
 				        }
 						if(player.pos.angle<0){
 				            player.pos.angle = 359;
 				        }
-				        if(player.pos.angle > 69 && player.pos.angle <= 112){
-							player.pos.direction = 4;
-						}
-						else if(player.pos.angle > 112 && player.pos.angle <= 157){
-							player.pos.direction = 5;
-						}
-						else if(player.pos.angle > 157 && player.pos.angle <= 202){
-							player.pos.direction = 6;
-						}
-						else if(player.pos.angle > 202 && player.pos.angle <= 247){
-							player.pos.direction = 7;
-						}
-						else if(player.pos.angle > 247 && player.pos.angle <= 292){
-							player.pos.direction = 0;
-						}
-						else if(player.pos.angle > 292 && player.pos.angle <= 337){
-							player.pos.direction = 1;
-						}			
-						else if((player.pos.angle > 337 && player.pos.angle <= 360) || (player.pos.angle > 0 && player.pos.angle <= 23)){
-							player.pos.direction = 2;
-						}
-						else if(player.pos.angle > 23 && player.pos.angle <= 68){
-							player.pos.direction = 3;
-						}
+				        player.pos.direction = check_direction(player.pos.angle);
 						if (boss.pos.x-boss.tamanho < bac.pos.x ){
 							boss.pos.walkingangle = 1;
 						}
@@ -946,30 +912,7 @@ int main(){
 						}
 						boss.pos.x+=cos(boss.pos.walkingangle*conv)*(int)boss.speed;
 				       	boss.pos.y+=sin(boss.pos.walkingangle*conv)*(int)boss.speed;
-				       	if(boss.pos.walkingangle > 69 && boss.pos.walkingangle <= 112){
-							boss.pos.direction = 4;
-						}
-						else if(boss.pos.walkingangle > 112 && boss.pos.walkingangle <= 157){
-							boss.pos.direction = 5;
-						}
-						else if(boss.pos.walkingangle > 157 && boss.pos.walkingangle <= 202){
-							boss.pos.direction = 6;
-						}
-						else if(boss.pos.walkingangle > 202 && boss.pos.walkingangle <= 247){
-							boss.pos.direction = 7;
-						}
-						else if(boss.pos.walkingangle > 247 && boss.pos.walkingangle <= 292){
-							boss.pos.direction = 0;
-						}
-						else if(boss.pos.walkingangle > 292 && boss.pos.walkingangle <= 337){
-							boss.pos.direction = 1;
-						}			
-						else if((boss.pos.walkingangle > 337 && boss.pos.walkingangle <= 360) || (boss.pos.walkingangle > 0 && boss.pos.walkingangle <= 23)){
-							boss.pos.direction = 2;
-						}
-						else if(boss.pos.walkingangle > 23 && boss.pos.walkingangle <= 68){
-							boss.pos.direction = 3;
-						}
+				       	boss.pos.direction = check_direction(boss.pos.walkingangle);
 				       	for(index = 0; index < num;index++){
 				       		if(enmy[index].spawned == true){
 				       			enmy[index].posi.x+=cos(enmy[index].posi.walkingangle*conv)*enmy[index].speed;	
@@ -1087,7 +1030,6 @@ int main(){
 						}
 			    		setvisualpage(pg);
 			    		cicles++;
-			    		//delay(50);
 			    		if(cicles >= 65534){
 				        	cicles = 0;
 						}
@@ -1157,5 +1099,5 @@ int main(){
 	free(key.img);
 	free(key.mask);
 	printf("\n");
-	//system("pause");
+	system("pause");
 }
