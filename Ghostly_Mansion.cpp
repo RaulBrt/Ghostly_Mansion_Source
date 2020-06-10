@@ -3,8 +3,30 @@
 #include <math.h>		//Bibliotecas utilizadas
 #include <graphics.h>	//
 #include <time.h>		//
+//Define Global Stuff===================================================================
 static double conv = (3.14159265359/180); 	//Fator de conversão de graus para radianos
 int res[2] = {getmaxwidth(),getmaxheight()}; 					//Tamanho da tela em pixeis
+int num,ca,pg,index;
+int xpos = 0;
+int ypos = 0;
+int posx = 0;
+int posy = 0;
+int hitx = 0;
+int hity = 0;
+double co;
+unsigned long long int cicles = 0;
+void *enmyatlas[8][5];
+void *enmymask[8][5];
+void *btrimg;
+void *btrmask;
+void *fbimg[5];
+void *fbmask[5];
+void *back[5];
+int flash[8];
+int chance;
+int fase = 0;
+bool done,pausa;
+clock_t start;
 //Structfy stuff=======================================================
 struct player{ 										//Struct para organizar as variaveis do jogador
 	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
@@ -68,28 +90,6 @@ struct key{											//Struct para organizar as variaveis da chave
 	void *img;
 	void *mask;
 };
-//Define Global Stuff===================================================================
-int num,ca,pg,index;
-int xpos = 0;
-int ypos = 0;
-int posx = 0;
-int posy = 0;
-int hitx = 0;
-int hity = 0;
-double co;
-unsigned long long int cicles = 0;
-void *enmyatlas[8][5];
-void *enmymask[8][5];
-void *btrimg;
-void *btrmask;
-void *fbimg[5];
-void *fbmask[5];
-void *back[5];
-int flash[8];
-int chance;
-int fase = 0;
-bool done,pausa;
-clock_t start;
 player player;
 enemy *enmy;
 battery battery[2];
@@ -293,7 +293,8 @@ void load_img(){
 }
 int check_direction(int angle){
 	int direction;
-    if(angle > 69 && angle <= 112){
+	printf("Angle = %d\n",angle);
+    if(angle > 68 && angle <= 112){
 		direction = 4;
 	}
 	else if(angle > 112 && angle <= 157){
@@ -311,7 +312,7 @@ int check_direction(int angle){
 	else if(angle > 292 && angle <= 337){
 		direction = 1;
 	}			
-	else if((angle > 337 && angle <= 360) || (angle > 0 && angle <= 23)){
+	else if((angle > 337 && angle <= 360) || (angle >= 0 && angle <= 23)){
 		direction = 2;
 	}
 	else if(angle > 23 && angle <= 68){
@@ -338,10 +339,10 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 		battery[index].tamanho = 48;
 	}
 	key.spawned = false;
-    bac.chao.larg = chaox;//2046
-    bac.chao.alt = chaoy;//1600
-    bac.parede.alt = pary;//256
-    bac.parede.larg = parx;//2048
+    bac.chao.larg = chaox;
+    bac.chao.alt = chaoy;
+    bac.parede.alt = pary;
+    bac.parede.larg = parx;
 	player.pos.x = (int)(res[0]/2);
 	player.pos.y = (int)(res[1]/2);	
     player.key = false;
@@ -349,7 +350,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
     bac.pos.y = player.pos.y-((int)bac.chao.alt/2);
     player.pos.relx = player.pos.x - bac.pos.x;
     player.pos.rely = player.pos.y - bac.pos.y;
-	printf("Primeira cutscene...\n");
 	while(!done){
 		for(pg = 1; pg<=2;pg++){
 			while(pausa){
@@ -445,11 +445,15 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 		        player.pos.angle = 359;
 		    }
 		    player.pos.direction = check_direction(player.pos.angle);
+		    printf("player.pos.direction = %d\n", player.pos.direction);
 			for(index = 0; index < num; index ++){
 				if(enmy[index].spawned == 1){
 					chance = rand()%3;
 					if (enmy[index].posi.relx-enmy[index].tamanho < 0 || enmy[index].posi.rely-enmy[index].tamanho < 0 || enmy[index].posi.relx+enmy[index].tamanho > bac.chao.larg || enmy[index].posi.rely+enmy[index].tamanho > bac.chao.alt){
 						enmy[index].posi.walkingangle += 180;
+						if(enmy[index].posi.walkingangle>360){
+							enmy[index].posi.walkingangle-=360;
+						}
 					}
 					else if (cicles%30 == 0 && chance == 0){
 						enmy[index].posi.walkingangle = rand()%360;
@@ -457,6 +461,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
 			       	enmy[index].posi.rely+=sin(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
 			       	enmy[index].posi.direction = check_direction(enmy[index].posi.walkingangle);
+			       	printf("enmy.posi.direction = %d\n",enmy[index].posi.direction);
 				}				
 			}
 			for(index=0;index<2;index++){
@@ -468,7 +473,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			if(key.spawned == true){
 					key.x = bac.pos.x+key.relx;
 	    			key.y = bac.pos.y+key.rely;
-				}
+			}
 	        //Hit stuff=======================================================================================
 	        for(index = 0;index < num; index++){
 		    	enmy[index].posi.angle = (int)(atan((float)(enmy[index].posi.y-player.pos.y)/(float)(enmy[index].posi.x-player.pos.x))*(180/3.14159265359));
@@ -492,9 +497,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 		        if(enmy[index].health < 0){
 		        	enmy[index].spawned = false;
 		        	enmy[index].health = NULL;
-		        	player.score+=1;
-		        	printf("Score: %d\n",player.score);
-		        	
+		        	player.score+=1;	        	
 				}
 				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned && player.loss){
 					if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
@@ -512,7 +515,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					battery[index].x = 0;
 	    			battery[index].y = 0;
 	    			player.lanterna.alcance+=50;
-	    			printf("Spawn bateria %d: %d\n",index,battery[index].spawned);
 				}
 			}
 			if(player.lanterna.alcance>500){
@@ -527,9 +529,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	    			player.key = true;
 				}
 	        //Draw stuff=======================================================================================
-	        putimage(bac.pos.x,bac.pos.y,back[level+1],0);
-	        setcolor(RGB(255,255,0));
-	        setfillstyle(1,RGB(255,255,0));
+	        setcolor(RGB(64,64,0));
+	        setfillstyle(1,RGB(64,64,0));
 	        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
 	        flash[0] = player.pos.x;
 			flash[1] = player.pos.y;
@@ -540,6 +541,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			flash[6] = player.pos.x;
 			flash[7] = player.pos.y;
 	        fillpoly(4,flash);
+			putimage(bac.pos.x,bac.pos.y,back[level+1],OR_PUT);
 	  		for(index = 0;index < num; index++){
 		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
 					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmymask[enmy[index].posi.direction][cicles%5],AND_PUT);
@@ -550,7 +552,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				if(battery[index].spawned == true){
 					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrmask,AND_PUT);
 					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
-						
 				}
 			}
 			if(key.spawned == true){
@@ -619,6 +620,7 @@ int main(){
 	bool resultado;
 	int wn = 30;
 	int k,l;
+	setbkcolor(RGB(0,0,0));
     while(playing){
     	switch (fase){
 	    	case 0:{
@@ -717,8 +719,7 @@ int main(){
 					printf("%d\n",fase);					
 				}
 				break;
-			}
-				//free(enmy);	
+			}	
 			case 3:{
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
@@ -803,7 +804,7 @@ int main(){
 						}
 			    		//Spawn Stuff======================================================================================
 			    		for(index = 0 ; index < num; index++){
-			    			chance = rand()%500;
+			    			chance = rand()%300;
 			    			if(chance == 0 && enmy[index].spawned == false){
 			    				enmy[index].posi.x = boss.pos.x + (boss.tamanho/2);
 			    				enmy[index].posi.y = boss.pos.y + boss.tamanho;
@@ -820,7 +821,7 @@ int main(){
 							}
 						}
 						for(index = 0; index <2 ; index ++){
-							chance=rand()%100;
+							chance=rand()%500;
 							if(battery[index].spawned == 0 && chance == 0){
 								battery[index].spawned = 1;
 								battery[index].x = 0;
@@ -837,7 +838,6 @@ int main(){
 						}
 			    		//Move Stuff=====================================================================================
 			    		player.moving = false;
-			    		//if(kbhit()){
 			    			if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								pausa = !pausa;
 								delay(250);
@@ -858,7 +858,6 @@ int main(){
 				        		player.pos.x+=5;
 				        		player.moving = true;
 							}
-						//}
 						ca = mousex()-player.pos.x;
 						if(ca < 1 && ca > -1){
 							ca = 1;
@@ -951,7 +950,7 @@ int main(){
 						}
 				        if(player.pos.x-player.tamanho<=boss.pos.x+boss.tamanho && player.pos.x+player.tamanho >= boss.pos.x-boss.tamanho && player.loss){
 				        	if(player.pos.y-player.tamanho<=boss.pos.y+boss.tamanho && player.pos.y+player.tamanho >= boss.pos.y-boss.tamanho){
-				        		player.lanterna.alcance-=7;
+				        		player.lanterna.alcance-=20;
 							}
 						}
 						for (index = 0;index < num;index++){
@@ -962,7 +961,7 @@ int main(){
 								if(enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho && player.loss){
 									if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 										enmy[index].spawned = false;
-										player.lanterna.alcance-=30;
+										player.lanterna.alcance-=50;
 									}
 								}
 							}	
@@ -981,9 +980,8 @@ int main(){
 						}
 						
 			    		//Drawstuff=====================================================================================
-			    		putimage(bac.pos.x,bac.pos.y,back[4],0);
-			    		setcolor(RGB(255,255,0));
-				        setfillstyle(1,RGB(255,255,0));
+			    		setcolor(RGB(128,128,0));
+				        setfillstyle(1,RGB(128,128,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
 				        flash[0] = player.pos.x;
 						flash[1] = player.pos.y;
@@ -993,7 +991,8 @@ int main(){
 						flash[5] = posy;
 						flash[6] = player.pos.x;
 						flash[7] = player.pos.y;
-				        fillpoly(4,flash);
+				        //fillpoly(4,flash);
+			    		putimage(bac.pos.x,bac.pos.y,back[4],OR_PUT);
 				        if(player.moving){
 				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][cicles%5],OR_PUT);
@@ -1004,7 +1003,6 @@ int main(){
 						}
 			    		putimage(boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.mask[boss.pos.direction][cicles%4],AND_PUT);
 			    		putimage(boss.pos.x-boss.tamanho,boss.pos.y-boss.tamanho,boss.img[boss.pos.direction][cicles%4],OR_PUT);
-			    		setfillstyle(1,RGB(0,0,255));
 			    		for(index = 0; index < num; index++){
 			    			if(enmy[index].spawned == true){
 			    				putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,fbmask[(cicles+index)%5],AND_PUT);
@@ -1017,7 +1015,7 @@ int main(){
 								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
 							}
 						}
-						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
+						//mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
 						//Win/lose====================================================================================================
 						if(boss.health <= 0){
 							fase = 7;
