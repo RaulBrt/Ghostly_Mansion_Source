@@ -29,7 +29,7 @@ bool done,pausa;
 clock_t start;
 //Structfy stuff=======================================================
 struct player{ 										//Struct para organizar as variaveis do jogador
-	int tamanho,health,score;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
+	int tamanho,health,score,life;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
 	bool key,moving,loss;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
 	void *atlas[8][5];	
 	void *mask[8][5];							//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
@@ -291,9 +291,28 @@ void load_img(){
 	getimage(0,0,res[1],res[1],back[4]);
 	closegraph();
 }
+void draw_death_screen(int vida){
+	char buffer[1];
+	cleardevice();
+	readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
+	setcolor(RGB(255,0,0));
+	setfillstyle(1,RGB(0,0,0));
+	rectangle(0,(760*res[1])/1080,res[0],res[1]);
+	floodfill(res[0]-1,res[1]-1,RGB(255,0,0));
+	setcolor(RGB(0,0,0));
+	setfillstyle(1,RGB(0,0,0));
+	rectangle(0,(760*res[1])/1080,res[0],res[1]);
+	readimagefile("Images/Menus/Icon.bmp",(790*res[0])/1920,(835*res[1])/1080,(884*res[0])/1920,(929*res[1])/1080);
+	setcolor(RGB(255,255,255));
+	setfillstyle(1,RGB(255,255,255));
+	settextstyle(0,0,60);
+	outtextxy((890*res[0])/1920, (882*res[1])/1080,(char*)"X");
+	settextstyle(0,0,64);
+	outtextxy((950*res[0])/1920, (850*res[1])/1080,(char*)itoa(vida+1,buffer,10));
+}
 int check_direction(int angle){
 	int direction;
-	printf("Angle = %d\n",angle);
+	//printf("Angle = %d\n",angle);
     if(angle > 68 && angle <= 112){
 		direction = 4;
 	}
@@ -318,7 +337,20 @@ int check_direction(int angle){
 	else if(angle > 23 && angle <= 68){
 		direction = 3;
 	}
+	//printf(" %d\n",direction);
 	return(direction);
+}
+bool check_button(int left, int top, int right, int bottom){
+	bool click = false;
+	setcolor(RGB(255,255,0));
+	rectangle(left,top,right,bottom);
+	if ((GetAsyncKeyState(VK_LBUTTON)) && 0x8000){
+		if(mousex() >= left && mousex() <= right && mousey() >= top && mousey() <= bottom){
+			printf("Click\n");
+			click = true;
+		}
+	}
+	return(click);
 }
 bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, int level){
 	bool result;
@@ -444,8 +476,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			if(player.pos.angle<0){
 		        player.pos.angle = 359;
 		    }
+		    printf("player.pos.direction =");
 		    player.pos.direction = check_direction(player.pos.angle);
-		    printf("player.pos.direction = %d\n", player.pos.direction);
 			for(index = 0; index < num; index ++){
 				if(enmy[index].spawned == 1){
 					chance = rand()%3;
@@ -617,7 +649,7 @@ int main(){
 	cleardevice();
 	fase = 0;
 	bool playing = true;
-	bool resultado;
+	bool resultado,again;
 	int wn = 30;
 	int k,l;
 	setbkcolor(RGB(0,0,0));
@@ -625,28 +657,24 @@ int main(){
     	switch (fase){
 	    	case 0:{
 	    		printf("Menu\n");
-	    		char menu[2][20]={"Images/menu.bmp","Images/menu_2.bmp"};
+	    		char menu[2][26]={"Images/Menus/menu.bmp","Images/Menus/menu_2.bmp"};
 	    		int imagem = 0;
+	    		player.life = 2;
 	    		while(imagem < 2){
 					for(pg = 1;pg<=2;pg++){
 						char cheat[10] = {};
 						setactivepage(pg);
 						cleardevice();
+						readimagefile(menu[imagem],0,0,res[0],res[1]);
 						if(imagem == 0){
-							if (GetAsyncKeyState(VK_LBUTTON) && 0x8000){
-								if(mousey()>=(650*res[1])/1080 && mousey()<=(770*res[1])/1080){
-									if(mousex()>=(int)(190*res[0])/1920 && mousex()<=(int)(440*res[0])/1920){	
-										fase = 1;
-										imagem = 3000;
-										break;
-									}
-								}
-								else if(mousex()>=(int)(190*res[0])/1920 && mousex()<=(int)(720*res[0])/1920){	
-									if(mousey()>=(800*res[1])/1080 && mousey()<=(890*res[1])/1080){
-										imagem = 1;
-									}
-								}
+							if (check_button((190*res[0])/1920,(650*res[1])/1080,(440*res[0])/1920,(770*res[1])/1080)){
+								fase = 1;
+								imagem = 3000;
+								break;
 							}
+							else if(check_button((190*res[0])/1920,(800*res[1])/1080,(720*res[0])/1920,(890*res[1])/1080)){	
+									imagem = 1;
+								}
 							else if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								playing = false;
 								imagem = 3000;
@@ -654,15 +682,10 @@ int main(){
 							}
 						}
 						else if(imagem == 1){
-							if ((GetAsyncKeyState(VK_LBUTTON) || GetAsyncKeyState(VK_ESCAPE)) && 0x8000){
-								if((mousey()>=(970*res[1])/1080 && mousey()<=(1050*res[1])/1080) || (GetAsyncKeyState(VK_ESCAPE) & 0x8000)){
-									if((mousex()>=(int)(1650*res[0])/1920 && mousex()<=(int)(1890*res[0])/1920) || (GetAsyncKeyState(VK_ESCAPE) & 0x8000)){	
-										imagem = 0;
-									}
-								}
+							if (check_button((1650*res[0])/1920,(970*res[1])/1080,(1890*res[0])/1920,(1050*res[1])/1080) || GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								imagem = 0;
 							}
 						}
-						readimagefile(menu[imagem],0,0,res[0],res[1]);
 			    		setvisualpage(pg);
 			    		if (GetAsyncKeyState('A') && GetAsyncKeyState('L') && 0x8000){
 			    			printf("Digite a trapaca: ");
@@ -709,14 +732,37 @@ int main(){
 	    	case 2:{
 	    		printf("Check\n");
 	    		cicles = 0;
+	    		enmy = NULL;
 	    		resultado = game(wn ,10, 4, 2048, 800, 2048, 256, 0);	
-				enmy = NULL;
 				if (resultado == true){
 					fase = 3;
 				}
 				if (resultado == false){
-					fase = 8;
-					printf("%d\n",fase);					
+					if(player.life>=1){
+						setactivepage(1);
+						draw_death_screen(player.life);
+						player.life--;
+						setvisualpage(1);
+						delay(1000);
+						setactivepage(2);
+						draw_death_screen(player.life);
+						setvisualpage(2);
+						delay(2000);
+						setactivepage(1);
+						cleardevice();
+						readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
+						setvisualpage(1);
+						while(!check_button((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080)){
+							if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								fase=8;
+								break;
+							}
+						}					
+					}			
+					else if(player.life<1){
+						fase = 8;
+						printf("%d\n",fase);	
+					}		
 				}
 				break;
 			}	
@@ -732,17 +778,40 @@ int main(){
 
 			case 4:
 				cicles = 0;
-	    		resultado = game(wn ,20, 6, 2048, 1600, 2048, 256,2);	
 				enmy = NULL;
+	    		resultado = game(wn ,20, 6, 2048, 1600, 2048, 256,2);	
 				if (resultado == true){
 					fase = 5;
 					break;
 				}
-				else if(resultado == false){
-					fase = 8;
-					break;
-					
+				if (resultado == false){
+					if(player.life>=1){
+						setactivepage(1);
+						draw_death_screen(player.life);
+						player.life--;
+						setvisualpage(1);
+						delay(1000);
+						setactivepage(2);
+						draw_death_screen(player.life);
+						setvisualpage(2);
+						delay(2000);
+						setactivepage(1);
+						cleardevice();
+						readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
+						setvisualpage(1);
+						while(!check_button((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080)){
+							if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								fase = 8;
+								break;
+							}
+						}
+					}			
+					else if(player.life<1){
+						fase = 8;
+						printf("%d\n",fase);	
+					}		
 				}
+				break;
 			case 5:
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
@@ -750,20 +819,24 @@ int main(){
 	    		delay(1000);
 	    		getch();
 	    		fase = 6;
-	    		break;
+	    		free(enmy);
+	    		//break;
 			case 6:{
+				cleardevice();
 				int limite,hi;
 				double tg;
+				bool chefao = true;
 				for(index = 0; index < 2; index++){
 					battery[index].spawned = 0;
 					battery[index].tamanho = 48;
 				}
+				enmy = NULL;
 				enmy = (enemy*)realloc(enmy,15*sizeof(enemy));
 			    bac.chao.larg = res[1];
 			    bac.chao.alt = res[1];
 			    limite = res[1]-(320*bac.chao.alt/2048);
-			    player.pos.x = (int)(res[0]/2);// Mudar
-			   	player.pos.y = bac.chao.alt-((bac.chao.alt-limite)/2);// Mudar
+			    player.pos.x = (int)(res[0]/2);
+			   	player.pos.y = bac.chao.alt-((bac.chao.alt-limite)/2);
 			    player.lanterna.alcance = 450;
 			    player.lanterna.angle = 30;
 			    player.pos.angle = 270;
@@ -771,7 +844,7 @@ int main(){
 			    bac.pos.x = (int)(res[0]-res[1])/2;
 			    bac.pos.y = 0;
 			    boss.pos.x = res[0]/2;
-			    boss.pos.y = res[1]/2;
+			    boss.pos.y = boss.tamanho+20;
 			    boss.speed = 5;
 			    boss.pos.walkingangle = rand()%360;
 			    boss.health = 15000;
@@ -785,7 +858,7 @@ int main(){
 				}
 				pausa = false;
 			    cicles = 0;
-			    while(fase == 6){
+			    while(chefao){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
 				    	while(pausa){
 							if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
@@ -831,7 +904,6 @@ int main(){
 								}
 								
 								while(battery[index].y <= limite){
-									printf("aqui\n");
 									battery[index].y = rand()%bac.chao.alt;	
 								}
 							}
@@ -935,7 +1007,6 @@ int main(){
 				   	    	co = ca*tan((player.lanterna.angle/2)*conv);
 				   	    	if ((abs(boss.pos.hit[1]-player.pos.y)<co+boss.tamanho || abs(boss.pos.hit[1]-player.pos.y)<co-boss.tamanho) && sqrt(((boss.pos.x-player.pos.x)*(boss.pos.x-player.pos.x))+((boss.pos.y-player.pos.y)*(boss.pos.y-player.pos.y)))<=player.lanterna.alcance+boss.tamanho){
 				   				boss.health -= (int)((abs(1000/co))+(abs(1000/ca)));
-				   				printf("Vida do Boss: %d\n",boss.health);
 				   			}
 				        }
 				        if(boss.health <= 10000 && boss.health > 5000){
@@ -975,7 +1046,6 @@ int main(){
 				    			if(player.lanterna.alcance > 600){
 				    				player.lanterna.alcance = 600;
 								}
-				    			printf("Spawn bateria %d: %d\n",index,battery[index].spawned);
 							}
 						}
 						
@@ -991,7 +1061,7 @@ int main(){
 						flash[5] = posy;
 						flash[6] = player.pos.x;
 						flash[7] = player.pos.y;
-				        //fillpoly(4,flash);
+				        fillpoly(4,flash);
 			    		putimage(bac.pos.x,bac.pos.y,back[4],OR_PUT);
 				        if(player.moving){
 				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
@@ -1015,16 +1085,41 @@ int main(){
 								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
 							}
 						}
-						//mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
+						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
 						//Win/lose====================================================================================================
 						if(boss.health <= 0){
 							fase = 7;
 							break;
 						}
 						else if (player.lanterna.alcance <= 0){
-							fase = 8;
-							playing = false;
-							break;
+							if(player.life>=1){
+								setactivepage(1);
+								draw_death_screen(player.life);
+								player.life--;
+								setvisualpage(1);
+								delay(1000);
+								setactivepage(2);
+								draw_death_screen(player.life);
+								setvisualpage(2);
+								delay(2000);
+								setactivepage(1);
+								cleardevice();
+								readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
+								setvisualpage(1);
+								while(!check_button((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080)){
+									if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+										fase = 8;
+										break;
+									}
+								}
+								chefao = false;
+								break;
+							}			
+							else if(player.life<1){
+								fase = 8;
+								chefao = false;
+								break;	
+							}		
 						}
 			    		setvisualpage(pg);
 			    		cicles++;
@@ -1056,7 +1151,6 @@ int main(){
 	    		player.loss = true;
 	    		break;
 			case 8:{
-				//playing = false;
 				cleardevice();
 				setactivepage(1);
 				readimagefile("Images/Cutscenes/over.bmp",0,0,res[0],res[1]);
