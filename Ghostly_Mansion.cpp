@@ -22,6 +22,7 @@ void *btrmask;
 void *fbimg[5];
 void *fbmask[5];
 void *back[5];
+void *seta[4];
 int flash[8];
 int chance;
 int fase = 0;
@@ -179,7 +180,7 @@ void mask(int left, int top, int right, int bottom){
 }
 void load_img(){
 	initwindow(2048,2048);
-	int i,j;
+	int i,j,k;
 	int tam = imagesize(0,0,player.tamanho*2,player.tamanho*2);
 	setvisualpage(1);
 	setactivepage(2);
@@ -276,7 +277,7 @@ void load_img(){
 	getimage(0,0,2048,800,back[1]);
 	cleardevice();
 	tam = imagesize(0,0,2048,256);
-	readimagefile("Images/Background/biblioteca_parade.bmp",0,0,2048,256);
+	readimagefile("Images/Background/biblioteca_parede.bmp",0,0,2048,256);
 	back[2] = malloc(tam);
 	getimage(0,0,2048,256,back[2]);
 	cleardevice();
@@ -289,6 +290,17 @@ void load_img(){
 	readimagefile("Images/Background/hall.bmp",0,0,res[1],res[1]);
 	back[4] = malloc(tam);
 	getimage(0,0,res[1],res[1],back[4]);
+	cleardevice();
+	tam = imagesize(0,0,128,128);
+	readimagefile("Images/Menus/Seta.bmp",0,0,256,256);
+	k = 0;
+	for(i = 0; i < 2;i++){
+		for(j = 0; j < 2; j++){
+			seta[k] = malloc(tam);
+			getimage(j*128,i*128,(j+1)*128,(i+1)*128,seta[k]);
+			k++;
+		}
+	}
 	closegraph();
 }
 void draw_death_screen(int vida){
@@ -342,8 +354,8 @@ int check_direction(int angle){
 }
 bool check_button(int left, int top, int right, int bottom){
 	bool click = false;
-	setcolor(RGB(255,255,0));
-	rectangle(left,top,right,bottom);
+	/*setcolor(RGB(255,255,0));
+	rectangle(left,top,right,bottom);*/
 	if ((GetAsyncKeyState(VK_LBUTTON)) && 0x8000){
 		if(mousex() >= left && mousex() <= right && mousey() >= top && mousey() <= bottom){
 			printf("Click\n");
@@ -353,7 +365,7 @@ bool check_button(int left, int top, int right, int bottom){
 	return(click);
 }
 bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, int level){
-	bool result;
+	bool result,on_screen;
 	pausa = false;
 	done = false;
 	player.lanterna.alcance = 450;
@@ -429,6 +441,9 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				for (index = 0; index < num; index++){
 	    				enmy[index].spawned = false;
 					}
+			}
+			if(cicles%30 == 0){
+				on_screen = !on_screen;
 			}
 	    	//Move stuff=======================================================================================
 	    	player.pos.relx = player.pos.x - bac.pos.x;
@@ -534,7 +549,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned && player.loss){
 					if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 						if(player.lanterna.alcance > 0){
-								player.lanterna.alcance-=15;
+								player.lanterna.alcance-=10;
 						}
 					}
 				}
@@ -546,7 +561,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					battery[index].rely = 0;	
 					battery[index].x = 0;
 	    			battery[index].y = 0;
-	    			player.lanterna.alcance+=50;
+	    			player.lanterna.alcance+=75;
 				}
 			}
 			if(player.lanterna.alcance>500){
@@ -611,6 +626,16 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				break;
 			}
 			else if(player.key == true){
+				if(on_screen){
+					if(num == 10){
+						putimage(bac.pos.x+10,bac.pos.y+(bac.chao.alt/4),seta[0],AND_PUT);
+						putimage(bac.pos.x+10,bac.pos.y+(bac.chao.alt/4),seta[1],OR_PUT);
+					}
+					else if(num == 20){
+						putimage(bac.pos.x+(bac.chao.larg/2)-64,bac.pos.y+10,seta[2],AND_PUT);
+						putimage(bac.pos.x+(bac.chao.larg/2)-64,bac.pos.y+10,seta[3],OR_PUT);
+					}
+				}
 			 	if((num == 20 && player.pos.relx >= (bac.chao.larg/2)-15 && player.pos.relx <= (bac.chao.larg/2)+15 && player.pos.rely <= player.tamanho) || (num == 10 && player.pos.relx - player.tamanho <= 0)){
 					cleardevice();
 					setvisualpage(pg);
@@ -739,6 +764,9 @@ int main(){
 				}
 				if (resultado == false){
 					if(player.life>=1){
+						player.score = 0;
+						player.key = false;
+						key.spawned = false;
 						setactivepage(1);
 						draw_death_screen(player.life);
 						player.life--;
@@ -786,6 +814,9 @@ int main(){
 				}
 				if (resultado == false){
 					if(player.life>=1){
+						player.score = 0;
+						player.key = false;
+						key.spawned = false;
 						setactivepage(1);
 						draw_death_screen(player.life);
 						player.life--;
