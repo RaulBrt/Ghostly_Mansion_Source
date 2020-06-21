@@ -3,6 +3,7 @@
 #include <math.h>		//Bibliotecas utilizadas
 #include <graphics.h>	//
 #include <time.h>		//
+#include <string.h>
 //Define Global Stuff===================================================================
 static double conv = (3.14159265359/180); 	//Fator de conversão de graus para radianos
 int res[2] = {getmaxwidth(),getmaxheight()}; 					//Tamanho da tela em pixeis
@@ -13,8 +14,9 @@ int posx = 0;
 int posy = 0;
 int hitx = 0;
 int hity = 0;
+int FPS = 30;
 double co;
-unsigned long long int cicles = 0;
+unsigned long long int start, cicles = 0;
 void *enmyatlas[8][5];
 void *enmymask[8][5];
 void *btrimg;
@@ -23,11 +25,11 @@ void *fbimg[5];
 void *fbmask[5];
 void *back[5];
 void *seta[4];
+void *death_screen;
 int flash[8];
 int chance;
 int fase = 0;
 bool done,pausa;
-clock_t start;
 //Structfy stuff=======================================================
 struct player{ 										//Struct para organizar as variaveis do jogador
 	int tamanho,health,score,life;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
@@ -301,12 +303,23 @@ void load_img(){
 			k++;
 		}
 	}
+	cleardevice();
+	tam = imagesize(0,0,res[0],res[1]);
+	death_screen = malloc(tam);
+	readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
+	getimage(0,0,res[0],res[1],death_screen);
 	closegraph();
+}
+void text(int color,int tam, int x, int y, char* txt){
+	setcolor(color);
+	setfillstyle(1,color);
+	settextstyle(0,0,tam);
+	outtextxy(x,y,txt);
 }
 void draw_death_screen(int vida){
 	char buffer[1];
 	cleardevice();
-	readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
+	putimage(0,0,death_screen,COPY_PUT);
 	setcolor(RGB(255,0,0));
 	setfillstyle(1,RGB(0,0,0));
 	rectangle(0,(760*res[1])/1080,res[0],res[1]);
@@ -315,12 +328,8 @@ void draw_death_screen(int vida){
 	setfillstyle(1,RGB(0,0,0));
 	rectangle(0,(760*res[1])/1080,res[0],res[1]);
 	readimagefile("Images/Menus/Icon.bmp",(790*res[0])/1920,(835*res[1])/1080,(884*res[0])/1920,(929*res[1])/1080);
-	setcolor(RGB(255,255,255));
-	setfillstyle(1,RGB(255,255,255));
-	settextstyle(0,0,60);
-	outtextxy((890*res[0])/1920, (882*res[1])/1080,(char*)"X");
-	settextstyle(0,0,64);
-	outtextxy((950*res[0])/1920, (850*res[1])/1080,(char*)itoa(vida+1,buffer,10));
+	text(RGB(255,255,255),60,(890*res[0])/1920, (882*res[1])/1080, "X");
+	text(RGB(255,255,255),64,(950*res[0])/1920, (850*res[1])/1080,(char*)itoa(vida+1,buffer,10));
 }
 int check_direction(int angle){
 	int direction;
@@ -349,13 +358,10 @@ int check_direction(int angle){
 	else if(angle > 23 && angle <= 68){
 		direction = 3;
 	}
-	//printf(" %d\n",direction);
 	return(direction);
 }
 bool check_button(int left, int top, int right, int bottom){
 	bool click = false;
-	/*setcolor(RGB(255,255,0));
-	rectangle(left,top,right,bottom);*/
 	if ((GetAsyncKeyState(VK_LBUTTON)) && 0x8000){
 		if(mousex() >= left && mousex() <= right && mousey() >= top && mousey() <= bottom){
 			printf("Click\n");
@@ -394,15 +400,19 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
     bac.pos.y = player.pos.y-((int)bac.chao.alt/2);
     player.pos.relx = player.pos.x - bac.pos.x;
     player.pos.rely = player.pos.y - bac.pos.y;
+    long long unsigned int count = 0;
 	while(!done){
 		for(pg = 1; pg<=2;pg++){
 			while(pausa){
+				setactivepage(pg);
+				text(RGB(255,255,255),96,(800*res[0])/1920,(450*res[1])/1080,"Pause");
+				setvisualpage(pg);
 				if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 					pausa = !pausa;
 					delay(250);
 				}
 			}
-			start = clock();
+			start = GetTickCount();
 			setactivepage(pg);
 			cleardevice();
 			//Spawn stuff=======================================================================================
@@ -414,7 +424,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				}
 			}
 			for(index = 0; index <2 ; index ++){
-				chance=rand()%100;
+				chance=rand()%75;
 				if(battery[index].spawned == 0 && chance == 0){
 					battery[index].spawned = 1;
 					battery[index].relx = rand()%bac.chao.larg;
@@ -589,16 +599,16 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			flash[7] = player.pos.y;
 	        fillpoly(4,flash);
 			putimage(bac.pos.x,bac.pos.y,back[level+1],OR_PUT);
-	  		for(index = 0;index < num; index++){
-		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
-					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmymask[enmy[index].posi.direction][cicles%5],AND_PUT);
-					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmyatlas[enmy[index].posi.direction][cicles%5],OR_PUT);
-				}
-			}
 			for(index=0;index < 2; index++){
 				if(battery[index].spawned == true){
 					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrmask,AND_PUT);
 					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
+				}
+			}
+	  		for(index = 0;index < num; index++){
+		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
+					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmymask[enmy[index].posi.direction][cicles%5],AND_PUT);
+					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmyatlas[enmy[index].posi.direction][cicles%5],OR_PUT);
 				}
 			}
 			if(key.spawned == true){
@@ -650,7 +660,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	        if(cicles >= 65534){
 	        	cicles = 0;
 			}
-			while((double)(clock()-start)<34){
+			while((double)(GetTickCount()-start)<(1000/FPS)){
 			}
 		}
 	}
@@ -751,14 +761,19 @@ int main(){
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut1.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
-	    		getch();
+	    		delay(1000);
+	    		setactivepage(1);
+	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
+	    		setvisualpage(1);
+	    		do{
+				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 2;
 	    		break;
 	    	case 2:{
 	    		printf("Check\n");
 	    		cicles = 0;
 	    		enmy = NULL;
-	    		resultado = game(wn ,10, 4, 2048, 800, 2048, 256, 0);	
+	    		resultado = game(15 ,10, 4, 2048, 800, 2048, 256, 0);	
 				if (resultado == true){
 					fase = 3;
 				}
@@ -778,14 +793,32 @@ int main(){
 						delay(2000);
 						setactivepage(1);
 						cleardevice();
-						readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
-						setvisualpage(1);
-						while(!check_button((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080)){
+						pg=2;
+						do{
+							if(pg==1){
+								pg = 2;
+							}
+							else{
+								pg = 1;
+							}
+							setactivepage(pg);
+							cleardevice();
+							setcolor(RGB(255,255,255));
+							setfillstyle(1,RGB(255,255,255));
+							rectangle((580*res[0])/1920,(130*res[1])/1080,(1340*res[0])/1920,(750*res[1])/1080);
+							floodfill((581*res[0])/1920,(131*res[1])/1080,RGB(255,255,255));
+							rectangle((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080);
+							if(mousex() >= (295*res[0])/1920 && mousex() <= (1690*res[0])/1920 && mousey() >= (820*res[1])/1080 && mousey() <= (950*res[1])/1080){
+								setfillstyle(1,RGB(255,255,0));
+							}
+							floodfill((296*res[0])/1920,(821*res[1])/1080,RGB(255,255,255));
+							putimage(0,0,death_screen,AND_PUT);
 							if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								fase=8;
 								break;
 							}
-						}					
+							setvisualpage(pg);
+						}while(!check_button((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080));
 					}			
 					else if(player.life<1){
 						fase = 8;
@@ -799,7 +832,9 @@ int main(){
 	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		delay(1000);   		
-				getch();
+	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
+				do{
+				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 4;
 	    		break;
 			}
@@ -807,7 +842,7 @@ int main(){
 			case 4:
 				cicles = 0;
 				enmy = NULL;
-	    		resultado = game(wn ,20, 6, 2048, 1600, 2048, 256,2);	
+	    		resultado = game(25 ,20, 6, 2048, 1600, 2048, 256,2);	
 				if (resultado == true){
 					fase = 5;
 					break;
@@ -848,7 +883,9 @@ int main(){
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		delay(1000);
-	    		getch();
+	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
+	    		do{
+				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 6;
 	    		free(enmy);
 	    		//break;
@@ -897,7 +934,7 @@ int main(){
 								delay(250);
 							}
 						}
-			    		start = clock();
+			    		start = GetTickCount();
 			    		setactivepage(pg);
 			    		cleardevice();
 			    		//Mechanics Stuff======================================================================================
@@ -1022,6 +1059,7 @@ int main(){
 							}
 						}
 						//Hit Stuff=====================================================================================
+						printf("5");
 				    	boss.pos.angle = (int)(atan((float)(boss.pos.y-player.pos.y)/(float)(boss.pos.x-player.pos.x))*(180/3.14159265359));
 						if(boss.pos.angle < 0){
 							boss.pos.angle+=180;
@@ -1094,6 +1132,12 @@ int main(){
 						flash[7] = player.pos.y;
 				        fillpoly(4,flash);
 			    		putimage(bac.pos.x,bac.pos.y,back[4],OR_PUT);
+			    		for(index=0;index < 2; index++){
+							if(battery[index].spawned == true){
+								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrmask,AND_PUT);
+								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
+							}
+						}
 				        if(player.moving){
 				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][cicles%5],OR_PUT);
@@ -1108,12 +1152,6 @@ int main(){
 			    			if(enmy[index].spawned == true){
 			    				putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,fbmask[(cicles+index)%5],AND_PUT);
 			    				putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,fbimg[(cicles+index)%5],OR_PUT);
-							}
-						}
-						for(index=0;index < 2; index++){
-							if(battery[index].spawned == true){
-								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrmask,AND_PUT);
-								putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
 							}
 						}
 						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
@@ -1157,7 +1195,7 @@ int main(){
 			    		if(cicles >= 65534){
 				        	cicles = 0;
 						}
-						while((double)(clock()-start)<34){
+						while((double)(GetTickCount()-start)<(1000/FPS)){
 						}
 					}
 				}
