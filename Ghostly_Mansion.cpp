@@ -3,7 +3,7 @@
 #include <math.h>		//Bibliotecas utilizadas
 #include <graphics.h>	//
 #include <time.h>		//
-#include <string.h>
+#include <windows.h>
 //Define Global Stuff===================================================================
 static double conv = (3.14159265359/180); 	//Fator de conversão de graus para radianos
 int res[2] = {getmaxwidth(),getmaxheight()}; 					//Tamanho da tela em pixeis
@@ -29,6 +29,8 @@ void *death_screen;
 int flash[8];
 int chance;
 int fase = 0;
+char *walk[8];
+char *load_sound;
 bool done,pausa;
 //Structfy stuff=======================================================
 struct player{ 										//Struct para organizar as variaveis do jogador
@@ -67,7 +69,8 @@ struct boss{
 	};
 	pos pos;											//Criar o objeto pos que referencia a struct pos
 };
-struct background{									//Struct para organizar as variaveis do background
+struct background{	
+		bool playing;							//Struct para organizar as variaveis do background
 		struct pos{										//Struct para organizar as coordenadas x,y do background
 				int x,y;									//Variaveis para guardar as coordenadas x,y do background
 		};
@@ -328,7 +331,7 @@ void draw_death_screen(int vida){
 	setfillstyle(1,RGB(0,0,0));
 	rectangle(0,(760*res[1])/1080,res[0],res[1]);
 	readimagefile("Images/Menus/Icon.bmp",(790*res[0])/1920,(835*res[1])/1080,(884*res[0])/1920,(929*res[1])/1080);
-	text(RGB(255,255,255),60,(890*res[0])/1920, (882*res[1])/1080, "X");
+	text(RGB(255,255,255),60,(890*res[0])/1920, (882*res[1])/1080, (char*)"X");
 	text(RGB(255,255,255),64,(950*res[0])/1920, (850*res[1])/1080,(char*)itoa(vida+1,buffer,10));
 }
 int check_direction(int angle){
@@ -401,11 +404,15 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
     player.pos.relx = player.pos.x - bac.pos.x;
     player.pos.rely = player.pos.y - bac.pos.y;
     long long unsigned int count = 0;
+    if(!bac.playing){
+    	mciSendString("play fase from 0 repeat",NULL,0,0);
+    	bac.playing = true;
+	}
 	while(!done){
 		for(pg = 1; pg<=2;pg++){
 			while(pausa){
 				setactivepage(pg);
-				text(RGB(255,255,255),96,(800*res[0])/1920,(450*res[1])/1080,"Pause");
+				text(RGB(255,255,255),96,(800*res[0])/1920,(450*res[1])/1080,(char*)"Pause");
 				setvisualpage(pg);
 				if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 					pausa = !pausa;
@@ -617,8 +624,12 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 				
 			}
 			if(player.moving){
-				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][cicles%5],AND_PUT);
-				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.atlas[player.pos.direction][cicles%5],OR_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][(cicles/2)%5],AND_PUT);
+				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.atlas[player.pos.direction][(cicles/2)%5],OR_PUT);
+				if(cicles%6 == 0){
+					chance = rand()%8;
+					mciSendString(walk[chance],NULL,0,0);
+				}
 			}
 			else{
 				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][0],AND_PUT);
@@ -668,6 +679,10 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 }
 //Actual code stuff========================================================
 int main(){	
+ 	waveOutSetVolume(0,0xFFFFFFFF);
+	for(index=0;index<8;index++){
+		walk[index] = (char*)malloc(20*sizeof(char));
+	}
 	//Define stuff===========================================================================================
 	player.lanterna.angle = 30;
 	player.pos.angle = 270;
@@ -761,6 +776,13 @@ int main(){
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut1.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
+	    		load_sound = (char*)malloc(100*sizeof(char));
+				for(index = 1;index <=8 ; index++){
+					sprintf(load_sound,"open .\\SFX\\Walking\\Stone%d.mp3 type MPEGVideo alias stone%d",index,index);
+					sprintf(walk[index-1],"play stone%d from 0",index);
+					mciSendString((char*)load_sound,NULL,0,0);
+				}
+				mciSendString("open .\\SFX\\Background\\Fase.mp3 type MPEGVideo alias fase",NULL,0,0);
 	    		delay(1000);
 	    		setactivepage(1);
 	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
@@ -831,6 +853,14 @@ int main(){
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
+	    		load_sound = (char*)malloc(100*sizeof(char));
+				for(index = 1;index <=8 ; index++){
+					sprintf(load_sound,"close stone%d",index);
+					mciSendString((char*)load_sound,NULL,0,0);
+					sprintf(load_sound,"open .\\SFX\\Walking\\Wood%d.mp3 type MPEGVideo alias wood%d",index,index);
+					sprintf(walk[index-1],"play wood%d from 0",index);
+					mciSendString((char*)load_sound,NULL,0,0);
+				}
 	    		delay(1000);   		
 	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
 				do{
@@ -845,6 +875,7 @@ int main(){
 	    		resultado = game(25 ,20, 6, 2048, 1600, 2048, 256,2);	
 				if (resultado == true){
 					fase = 5;
+					mciSendString("close fase",NULL,0,0);
 					break;
 				}
 				if (resultado == false){
@@ -874,22 +905,25 @@ int main(){
 					}			
 					else if(player.life<1){
 						fase = 8;
-						printf("%d\n",fase);	
+						printf("%d\n",fase);
+						mciSendString("close fase",NULL,0,0);	
 					}		
 				}
+				free(enmy);
 				break;
 			case 5:
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
-	    		setvisualpage(1);
+	    		setvisualpage(1);	    		
+				mciSendString("open .\\SFX\\Background\\Boss.mp3 type MPEGVideo alias fase",NULL,0,0);
 	    		delay(1000);
-	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
+	    		text(RGB(255,255,255),32,(1630*res[0])/1920,res[1]-32,"Aperte Enter");
 	    		do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 6;
-	    		free(enmy);
 	    		//break;
 			case 6:{
+				printf("0");
 				cleardevice();
 				int limite,hi;
 				double tg;
@@ -926,6 +960,10 @@ int main(){
 				}
 				pausa = false;
 			    cicles = 0;
+			    if(!bac.playing){
+			    	mciSendString("play fase from 0 repeat",NULL,0,0);
+			    	bac.playing = true;
+				}
 			    while(chefao){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
 				    	while(pausa){
@@ -1139,8 +1177,12 @@ int main(){
 							}
 						}
 				        if(player.moving){
-				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][cicles%5],AND_PUT);
-							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][cicles%5],OR_PUT);
+				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][(cicles/2)%5],AND_PUT);
+							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][(cicles/2)%5],OR_PUT);
+							if(cicles%6 == 0){
+								chance = rand()%8;
+								mciSendString(walk[chance],NULL,0,0);
+							}
 						}
 						else{
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][0],AND_PUT);
@@ -1162,6 +1204,8 @@ int main(){
 						}
 						else if (player.lanterna.alcance <= 0){
 							if(player.life>=1){
+								mciSendString("stop fase",NULL,0,0);
+								bac.playing = false;
 								setactivepage(1);
 								draw_death_screen(player.life);
 								player.life--;
