@@ -365,6 +365,8 @@ int check_direction(int angle){
 }
 bool check_button(int left, int top, int right, int bottom){
 	bool click = false;
+	setcolor(RGB(255,255,255));
+	rectangle(left,top,right,bottom);
 	if ((GetAsyncKeyState(VK_LBUTTON)) && 0x8000){
 		if(mousex() >= left && mousex() <= right && mousey() >= top && mousey() <= bottom){
 			printf("Click\n");
@@ -377,7 +379,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	bool result,on_screen;
 	pausa = false;
 	done = false;
-	player.lanterna.alcance = 450;
+	player.lanterna.alcance = 500;
 	player.pos.angle = 270;
 	enmy = NULL;
 	enmy = (enemy*)realloc(enmy,num*sizeof(enemy));
@@ -447,6 +449,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			 	key.rely = rand()%bac.chao.alt;
 				key.x = bac.pos.x+key.relx;
 				key.y = bac.pos.y+key.rely;
+				mciSendString("play key from 0",NULL,0,0);
 			}	
 			//Mechanics Stuff==================================================================================
 			if(cicles%5== 0){
@@ -581,8 +584,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	    			player.lanterna.alcance+=75;
 				}
 			}
-			if(player.lanterna.alcance>500){
-	    		player.lanterna.alcance=500;
+			if(player.lanterna.alcance>600){
+	    		player.lanterna.alcance=600;
 			}
 			if(key.spawned == true && key.relx >= player.pos.relx-player.tamanho && key.relx <= player.pos.relx+player.tamanho && key.rely >= player.pos.rely-player.tamanho && key.rely <= player.pos.rely+player.tamanho){
 					key.spawned = false;
@@ -703,14 +706,19 @@ int main(){
 	int wn = 30;
 	int k,l;
 	setbkcolor(RGB(0,0,0));
+	load_sound = (char*)malloc(100*sizeof(char));
+	mciSendString("open .\\SFX\\Other\\Key.mp3 alias key",NULL,0,0);
     while(playing){
     	switch (fase){
 	    	case 0:{
 	    		printf("Menu\n");
-	    		char menu[2][26]={"Images/Menus/menu.bmp","Images/Menus/menu_2.bmp"};
+	    		char menu[3][26]={"Images/Menus/menu.bmp","Images/Menus/menu_2.bmp","Images/Menus/Creditos.bmp"};
 	    		int imagem = 0;
 	    		player.life = 2;
-	    		while(imagem < 2){
+	    		if(bac.playing){
+	    			mciSendString("close fase",NULL,0,0);
+				}
+	    		while(imagem < 3){
 					for(pg = 1;pg<=2;pg++){
 						char cheat[10] = {};
 						setactivepage(pg);
@@ -723,8 +731,11 @@ int main(){
 								break;
 							}
 							else if(check_button((190*res[0])/1920,(800*res[1])/1080,(720*res[0])/1920,(890*res[1])/1080)){	
-									imagem = 1;
-								}
+								imagem = 1;
+							}
+							else if(check_button((190*res[0])/1920,(940*res[1])/1080,(580*res[0])/1920,(1030*res[1])/1080)){
+								imagem = 2;
+							}
 							else if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								playing = false;
 								imagem = 3000;
@@ -733,6 +744,11 @@ int main(){
 						}
 						else if(imagem == 1){
 							if (check_button((1650*res[0])/1920,(970*res[1])/1080,(1890*res[0])/1920,(1050*res[1])/1080) || GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+								imagem = 0;
+							}
+						}
+						else if(imagem == 2){
+							if (check_button((1630*res[0])/1920,(960*res[1])/1080,(1900*res[0])/1920,(1050*res[1])/1080) || GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								imagem = 0;
 							}
 						}
@@ -749,6 +765,11 @@ int main(){
 						}
 						else if (strcmp(cheat, "Sp3ctr3") == 0){
 							cleardevice();
+							for(index = 1;index <=8 ; index++){
+								sprintf(load_sound,"open .\\SFX\\Walking\\Wood%d.mp3 type MPEGVideo alias wood%d",index,index);
+								sprintf(walk[index-1],"play wood%d from 0",index);
+								mciSendString((char*)load_sound,NULL,0,0);
+							}
 							fase = 5;
 							imagem = 3000;
 							break;
@@ -776,7 +797,6 @@ int main(){
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut1.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
-	    		load_sound = (char*)malloc(100*sizeof(char));
 				for(index = 1;index <=8 ; index++){
 					sprintf(load_sound,"open .\\SFX\\Walking\\Stone%d.mp3 type MPEGVideo alias stone%d",index,index);
 					sprintf(walk[index-1],"play stone%d from 0",index);
@@ -853,7 +873,6 @@ int main(){
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
-	    		load_sound = (char*)malloc(100*sizeof(char));
 				for(index = 1;index <=8 ; index++){
 					sprintf(load_sound,"close stone%d",index);
 					mciSendString((char*)load_sound,NULL,0,0);
@@ -916,12 +935,18 @@ int main(){
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);	    		
 				mciSendString("open .\\SFX\\Background\\Boss.mp3 type MPEGVideo alias fase",NULL,0,0);
+				char *fire[3];
+				for(index = 1;index <=3 ; index++){
+					fire[index-1] = (char*)malloc(50*sizeof(char));
+					sprintf(load_sound,"open .\\SFX\\Other\\Fire%d.mp3 type MPEGVideo alias fire%d",index,index);
+					sprintf(fire[index-1],"play fire%d from 0",index);
+					mciSendString((char*)load_sound,NULL,0,0);
+				}
 	    		delay(1000);
 	    		text(RGB(255,255,255),32,(1630*res[0])/1920,res[1]-32,"Aperte Enter");
 	    		do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 6;
-	    		//break;
 			case 6:{
 				printf("0");
 				cleardevice();
@@ -959,6 +984,7 @@ int main(){
 					enmy[index].tamanho = 32;
 				}
 				pausa = false;
+				bac.playing = false;
 			    cicles = 0;
 			    if(!bac.playing){
 			    	mciSendString("play fase from 0 repeat",NULL,0,0);
@@ -966,6 +992,7 @@ int main(){
 				}
 			    while(chefao){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
+			    		printf("1");
 				    	while(pausa){
 							if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								pausa = !pausa;
@@ -976,12 +1003,14 @@ int main(){
 			    		setactivepage(pg);
 			    		cleardevice();
 			    		//Mechanics Stuff======================================================================================
+			    		printf("2");
 			    		if(cicles%5== 0){
 							if(player.lanterna.alcance>=0 && player.loss){
 								player.lanterna.alcance-=1;
 							}
 						}
 			    		//Spawn Stuff======================================================================================
+			    		printf("3");
 			    		for(index = 0 ; index < num; index++){
 			    			chance = rand()%300;
 			    			if(chance == 0 && enmy[index].spawned == false){
@@ -997,6 +1026,8 @@ int main(){
 			    					enmy[index].posi.walkingangle+=180;
 								}
 								enmy[index].spawned = true;
+								chance = rand()%3;
+								mciSendString(fire[chance],NULL,0,0);
 							}
 						}
 						for(index = 0; index <2 ; index ++){
@@ -1015,6 +1046,7 @@ int main(){
 							}
 						}
 			    		//Move Stuff=====================================================================================
+			    		printf("4");
 			    		player.moving = false;
 			    			if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								pausa = !pausa;
@@ -1157,6 +1189,7 @@ int main(){
 						}
 						
 			    		//Drawstuff=====================================================================================
+			    		printf("6");
 			    		setcolor(RGB(128,128,0));
 				        setfillstyle(1,RGB(128,128,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
@@ -1180,7 +1213,7 @@ int main(){
 				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][(cicles/2)%5],AND_PUT);
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][(cicles/2)%5],OR_PUT);
 							if(cicles%6 == 0){
-								chance = rand()%8;
+								chance = rand()%3;
 								mciSendString(walk[chance],NULL,0,0);
 							}
 						}
@@ -1198,6 +1231,7 @@ int main(){
 						}
 						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
 						//Win/lose====================================================================================================
+						printf("7");
 						if(boss.health <= 0){
 							fase = 7;
 							break;
@@ -1259,6 +1293,14 @@ int main(){
 	    		setvisualpage(2);
 	    		delay(1000);
 	    		getch();
+	    		readimagefile("Images/Menus/Creditos.bmp",0,0,res[0],res[1]);
+	    		while(!check_button((1630*res[0])/1920,(960*res[1])/1080,(1900*res[0])/1920,(1050*res[1])/1080)){
+	    			if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+	    				break;
+					}
+				}
+				mciSendString("close fase",NULL,0,0);
+				bac.playing = false;
 	    		fase = 0;
 	    		wn = 30;
 	    		player.loss = true;
@@ -1270,6 +1312,8 @@ int main(){
 				setvisualpage(1);
 				delay(1000);
 				getch();
+				mciSendString("close fase",NULL,0,0);
+				bac.playing = false;
 				fase = 0;
 				wn = 30;
 				player.loss = true;
