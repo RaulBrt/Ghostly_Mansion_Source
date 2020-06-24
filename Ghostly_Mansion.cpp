@@ -1,12 +1,19 @@
-#include <stdlib.h> 	//
-#include <stdio.h>		//
-#include <math.h>		//Bibliotecas utilizadas
-#include <graphics.h>	//
-#include <time.h>		//
+/*
+Feito por:
+Estevan de Paula Zuppo
+Lucas Onzeki Tokudo
+Raul Teixeira Berto
+Vinicius Sousa Gomes
+*/
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <graphics.h>
+#include <time.h>
 #include <windows.h>
 //Define Global Stuff===================================================================
-static double conv = (3.14159265359/180); 	//Fator de conversão de graus para radianos
-int res[2] = {getmaxwidth(),getmaxheight()}; 					//Tamanho da tela em pixeis
+static double conv = (3.14159265359/180);
+int res[2] = {getmaxwidth(),getmaxheight()};
 int num,ca,pg,index;
 int xpos = 0;
 int ypos = 0;
@@ -33,30 +40,30 @@ char *walk[8];
 char *load_sound;
 bool done,pausa;
 //Structfy stuff=======================================================
-struct player{ 										//Struct para organizar as variaveis do jogador
-	int tamanho,health,score,life;							//Variaveis para guardar o tamanho da imagem, a vida e a pontuação do jogador respectivamente
-	bool key,moving,loss;									//Variaveis para saber se o jogador já pegou a chave da fase e para verificar se o jogador está andando respectivamente
+struct player{
+	int tamanho,health,score,life;
+	bool key,moving;
 	void *atlas[8][5];	
-	void *mask[8][5];							//Array de três indices para guardar as "Strings" dos nomes das imagens que compoem a animação de caminhada do jogador
-    struct pos{											//Struct para organizar as variaveis de posição do jogador
-        int x,y,angle,relx,rely,direction;					//Variaveis para guardar as coordenadas x,y na tela, o angulo em que o jogador está olhando, as coordenadas x,y em relação ao canto superior esquerdo do mapa e o indice da direção que o jogador está olhando
+	void *mask[8][5];
+    struct pos{		
+        int x,y,angle,relx,rely,direction;
     };
-    struct lanterna{									//Struct para organizar as variaveis da lanterna do jogador
-    	int angle,alcance,bateria;								//Variaveis para guardar o angulo formado pelo feixe de luz, a distancia e a quantidade de "vida" do jogador/lanterna
+    struct lanterna{
+    	int angle,alcance,bateria;
 	};
-    pos pos;											//Criar o objeto pos que referencia a struct pos
-    lanterna lanterna;									//Criar o objeto lanterna que referencia a struct lanterna
+    pos pos;
+    lanterna lanterna;
 };
-struct enemy{										//Struct para organizar as variaveis dos inimigos
-		int tamanho,speed;								//Variaveis para guardar o tamanho da imagem e a vida do inimigo
-		float health;									//Variavel para guardar a velocidade que o inimigo anda
+struct enemy{
+		int tamanho,speed;
+		float health;
 		bool spawned;
-		struct pos{										//Struct para organizar as variaveis de posição do inimigo
-			int x,y,angle,hitangle,walkingangle,direction;		//Variaveis para guardar as coordenadas x,y na tela, o angulo em relacão ao eixo x, o anglo formado entre a posição do inimigo e a lanterna e a direção que o inimigo está andando
-			int hit[2];									//Array para guardar as coordenadas x,y da hitbox do inimigo em relação a lanterna do jogador
-			float relx,rely;							//Variaveis para guardar as coordenadas x,y em relação ao canto superior esquerdo do mapa
-		};
-	pos posi;											//Criar o objeto posi que referencia a struct pos
+		struct pos{
+			int x,y,angle,hitangle,walkingangle,direction;
+			int hit[2];
+			float relx,rely;
+};
+	pos posi;
 };
 struct boss{
 	int tamanho,health,aggro;
@@ -67,12 +74,12 @@ struct boss{
 		int x,y,angle,hitangle,walkingangle,direction;
 		int hit[2];
 	};
-	pos pos;											//Criar o objeto pos que referencia a struct pos
+	pos pos;
 };
 struct background{	
-		bool playing;							//Struct para organizar as variaveis do background
-		struct pos{										//Struct para organizar as coordenadas x,y do background
-				int x,y;									//Variaveis para guardar as coordenadas x,y do background
+		bool playing;
+		struct pos{
+				int x,y;
 		};
 		struct parede{
 			int alt,larg;
@@ -84,15 +91,15 @@ struct background{
 		};
 	pos pos;	
 	parede parede;
-	chao chao;										//Criar o objeto pos que referencia a struct pos
+	chao chao;
 };
-struct battery{										//Struct para organizar as variaveis das baterias
-	bool spawned;										//Variavel para se se a bateria já está na tela
-	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da bateria
+struct battery{
+	bool spawned;
+	int x,y,relx,rely,tamanho;
 };
-struct key{											//Struct para organizar as variaveis da chave
-	bool spawned;										//Variavel para se se a chave já está na tela
-	int x,y,relx,rely,tamanho;							//Variaveis para guardar as coordenadas x,y na tela , as coordenadas x,y em relação ao canto superior esquerdo do mapa e o tamanho da imagem da chave
+struct key{
+	bool spawned;
+	int x,y,relx,rely,tamanho;
 	void *img;
 	void *mask;
 };
@@ -103,26 +110,26 @@ key key;
 background bac;
 boss boss;
 //Make stuff function =======================================================
-void screenflashlight(int angle,int centerx,int centery,int radius,int flashangle){ //Função para calcular os vertices do feixe de luz da lanterna
-	double nangle=angle*(conv); 														//<= Converter angulos de graus para radianos
-	double mangle=(angle-flashangle)*(conv);											//<= (angle = angulo em que o jogador está olhando) (flashangle = angulo formado pelo feixe de luz da lanterna)
-	xpos=(int)(centerx+cos(nangle)*radius);													//<= Calcular as coordenadas x,y
-	ypos=(int)(centery+sin(nangle)*radius);													//<= do vertice 'A' da luz da lanterna
-	posx=(int)(centerx+cos(mangle)*radius);												//<= Calcular as coordenadas x,y
-	posy=(int)(centery+sin(mangle)*radius);												//<= do vertice 'B' da luz da lanterna
+void screenflashlight(int angle,int centerx,int centery,int radius,int flashangle){
+	double nangle=angle*(conv);
+	double mangle=(angle-flashangle)*(conv);
+	xpos=(int)(centerx+cos(nangle)*radius);
+	ypos=(int)(centery+sin(nangle)*radius);
+	posx=(int)(centerx+cos(mangle)*radius);
+	posy=(int)(centery+sin(mangle)*radius);
 }
-void hitbox(int x, int y, int angle, int centerx, int centery){						//Função para calcular a hitbox do inimigo
-	double h = sqrt(((x-centerx)*(x-centerx))+((y-centery)*(y-centery)));				//Distancia em linha reta do inimigo até o jogador
-	hitx = (int)(h*cos(angle*conv))+centerx;												//<= Calcular as coordenadas x,y
-	hity = (int)(h*sin(angle*conv))+centery;												//<= da hitbox de um inimigo
+void hitbox(int x, int y, int angle, int centerx, int centery){
+	double h = sqrt(((x-centerx)*(x-centerx))+((y-centery)*(y-centery)));
+	hitx = (int)(h*cos(angle*conv))+centerx;
+	hity = (int)(h*sin(angle*conv))+centery;
 }
-void spawnenemies(int enem){														//Função para fazer inimigos aparecerem na tela
-	int chance = rand();																//Escolhe um numero aleatório
-	if (chance%100 == 0){																	//Cada inimigo tem 1% de chance de entrar em jogo a cada frame
-		enmy[enem].posi.relx = rand();													//<= Escolhe uma coordenada x aleatoriamente
-		enmy[enem].posi.relx = ((int)enmy[enem].posi.relx)%bac.chao.larg-enmy[enem].tamanho;//<= e o reposiciona para dentro do mapa
-		if(enmy[enem].posi.relx < enmy[enem].tamanho ){									//Caso a posição escolhida fizesse o inimigo aparescer com uma parte fora do mapa
-			enmy[enem].posi.relx+=2*enmy[enem].tamanho;											//Corrige a posição
+void spawnenemies(int enem){
+	int chance = rand();
+	if (chance%100 == 0){
+		enmy[enem].posi.relx = rand();
+		enmy[enem].posi.relx = ((int)enmy[enem].posi.relx)%bac.chao.larg-enmy[enem].tamanho;
+		if(enmy[enem].posi.relx < enmy[enem].tamanho ){
+			enmy[enem].posi.relx+=2*enmy[enem].tamanho;	
 		}
 		enmy[enem].posi.rely = rand();
 		enmy[enem].posi.rely = ((int)enmy[enem].posi.rely)%bac.chao.alt-enmy[enem].tamanho;
@@ -336,7 +343,6 @@ void draw_death_screen(int vida){
 }
 int check_direction(int angle){
 	int direction;
-	//printf("Angle = %d\n",angle);
     if(angle > 68 && angle <= 112){
 		direction = 4;
 	}
@@ -365,11 +371,8 @@ int check_direction(int angle){
 }
 bool check_button(int left, int top, int right, int bottom){
 	bool click = false;
-	setcolor(RGB(255,255,255));
-	rectangle(left,top,right,bottom);
 	if ((GetAsyncKeyState(VK_LBUTTON)) && 0x8000){
 		if(mousex() >= left && mousex() <= right && mousey() >= top && mousey() <= bottom){
-			printf("Click\n");
 			click = true;
 		}
 	}
@@ -383,7 +386,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	player.pos.angle = 270;
 	enmy = NULL;
 	enmy = (enemy*)realloc(enmy,num*sizeof(enemy));
-	printf("Jogar\n");
 	for (index = 0;index < num; index++){
     	    enmy[index].spawned = 0;
     	    enmy[index].speed = speed;
@@ -453,9 +455,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			}	
 			//Mechanics Stuff==================================================================================
 			if(cicles%5== 0){
-				if(player.lanterna.alcance>=0 && player.loss){
-					player.lanterna.alcance-=1;
-				}
+				player.lanterna.alcance-=1;
 			}
 			if (player.key == true){
 				for (index = 0; index < num; index++){
@@ -511,7 +511,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			if(player.pos.angle<0){
 		        player.pos.angle = 359;
 		    }
-		    printf("player.pos.direction =");
 		    player.pos.direction = check_direction(player.pos.angle);
 			for(index = 0; index < num; index ++){
 				if(enmy[index].spawned == 1){
@@ -528,7 +527,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					enmy[index].posi.relx+=cos(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
 			       	enmy[index].posi.rely+=sin(enmy[index].posi.walkingangle*conv)*(int)enmy[index].speed;
 			       	enmy[index].posi.direction = check_direction(enmy[index].posi.walkingangle);
-			       	printf("enmy.posi.direction = %d\n",enmy[index].posi.direction);
 				}				
 			}
 			for(index=0;index<2;index++){
@@ -566,7 +564,7 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 		        	enmy[index].health = NULL;
 		        	player.score+=1;	        	
 				}
-				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned && player.loss){
+				if((enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho)&& enmy[index].spawned){
 					if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 						if(player.lanterna.alcance > 0){
 								player.lanterna.alcance-=10;
@@ -615,16 +613,16 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 					putimage(battery[index].x-(battery[index].tamanho/2),battery[index].y-(battery[index].tamanho/2),btrimg,OR_PUT);
 				}
 			}
+			if(key.spawned == true){
+				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.mask,AND_PUT);
+				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.img,OR_PUT);
+				
+			}
 	  		for(index = 0;index < num; index++){
 		        if(enmy[index].posi.x > - enmy[index].tamanho && enmy[index].posi.x < res[0]+enmy[index].tamanho && enmy[index].posi.y > -enmy[index].tamanho && enmy[index].posi.y < res[1]+enmy[index].tamanho && enmy[index].spawned == 1){
 					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmymask[enmy[index].posi.direction][cicles%5],AND_PUT);
 					putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,enmyatlas[enmy[index].posi.direction][cicles%5],OR_PUT);
 				}
-			}
-			if(key.spawned == true){
-				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.mask,AND_PUT);
-				putimage(key.x-(key.tamanho/2),key.y-(key.tamanho/2),key.img,OR_PUT);
-				
 			}
 			if(player.moving){
 				putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho*1.3),player.mask[player.pos.direction][(cicles/2)%5],AND_PUT);
@@ -644,7 +642,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	        if(player.lanterna.alcance <= 0){
 				cleardevice();
 				setvisualpage(pg);
-				printf("GAME OVER!\n");
 				done = true;
 				result = false;
 				break;
@@ -663,7 +660,6 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 			 	if((num == 20 && player.pos.relx >= (bac.chao.larg/2)-15 && player.pos.relx <= (bac.chao.larg/2)+15 && player.pos.rely <= player.tamanho) || (num == 10 && player.pos.relx - player.tamanho <= 0)){
 					cleardevice();
 					setvisualpage(pg);
-					printf("YOU WIN!\n");
 					done = true;
 					result = true;
 					break;
@@ -682,15 +678,10 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 }
 //Actual code stuff========================================================
 int main(){	
- 	waveOutSetVolume(0,0xFFFFFFFF);
-	for(index=0;index<8;index++){
-		walk[index] = (char*)malloc(20*sizeof(char));
-	}
 	//Define stuff===========================================================================================
 	player.lanterna.angle = 30;
 	player.pos.angle = 270;
 	player.tamanho = 48;
-	player.loss = true;
 	key.tamanho = 64;
 	boss.tamanho = 64;
 	srand((unsigned)time(NULL));
@@ -708,10 +699,13 @@ int main(){
 	setbkcolor(RGB(0,0,0));
 	load_sound = (char*)malloc(100*sizeof(char));
 	mciSendString("open .\\SFX\\Other\\Key.mp3 alias key",NULL,0,0);
+	waveOutSetVolume(0,0xFFFFFFFF);
+	for(index=0;index<8;index++){
+		walk[index] = (char*)malloc(20*sizeof(char));
+	}
     while(playing){
     	switch (fase){
 	    	case 0:{
-	    		printf("Menu\n");
 	    		char menu[3][26]={"Images/Menus/menu.bmp","Images/Menus/menu_2.bmp","Images/Menus/Creditos.bmp"};
 	    		int imagem = 0;
 	    		player.life = 2;
@@ -720,7 +714,6 @@ int main(){
 				}
 	    		while(imagem < 3){
 					for(pg = 1;pg<=2;pg++){
-						char cheat[10] = {};
 						setactivepage(pg);
 						cleardevice();
 						readimagefile(menu[imagem],0,0,res[0],res[1]);
@@ -753,42 +746,6 @@ int main(){
 							}
 						}
 			    		setvisualpage(pg);
-			    		if (GetAsyncKeyState('A') && GetAsyncKeyState('L') && 0x8000){
-			    			printf("Digite a trapaca: ");
-			    			scanf("%s",&cheat);
-			    		}
-			    		if(strcmp(cheat, "Ap0cryph4") == 0) {
-			    			cleardevice();
-			    			fase = 3;
-			    			imagem = 3000;
-			    			break;
-						}
-						else if (strcmp(cheat, "Sp3ctr3") == 0){
-							cleardevice();
-							for(index = 1;index <=8 ; index++){
-								sprintf(load_sound,"open .\\SFX\\Walking\\Wood%d.mp3 type MPEGVideo alias wood%d",index,index);
-								sprintf(walk[index-1],"play wood%d from 0",index);
-								mciSendString((char*)load_sound,NULL,0,0);
-							}
-							fase = 5;
-							imagem = 3000;
-							break;
-						}
-						else if (strcmp(cheat, "V1ct0ry") == 0){
-							printf("Digite a pontuacao para ganhar: ");
-			    			scanf("%d",&wn);
-							break;
-						}
-						else if (strcmp(cheat, "4ch1ll3s") == 0){
-							printf("Invulnerabilidade\n ");
-			    			player.loss = false;
-							break;
-						}
-						else {
-							for(k = 0; k<10; k++){
-								cheat[k] = '\0';
-							}
-						}
 					}
 				}
 	    		break;
@@ -805,14 +762,13 @@ int main(){
 				mciSendString("open .\\SFX\\Background\\Fase.mp3 type MPEGVideo alias fase",NULL,0,0);
 	    		delay(1000);
 	    		setactivepage(1);
-	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
+	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
 	    		setvisualpage(1);
 	    		do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 2;
 	    		break;
 	    	case 2:{
-	    		printf("Check\n");
 	    		cicles = 0;
 	    		enmy = NULL;
 	    		resultado = game(15 ,10, 4, 2048, 800, 2048, 256, 0);	
@@ -863,8 +819,7 @@ int main(){
 						}while(!check_button((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080));
 					}			
 					else if(player.life<1){
-						fase = 8;
-						printf("%d\n",fase);	
+						fase = 8;	
 					}		
 				}
 				break;
@@ -881,7 +836,7 @@ int main(){
 					mciSendString((char*)load_sound,NULL,0,0);
 				}
 	    		delay(1000);   		
-	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,"Aperte Enter");
+	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
 				do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 4;
@@ -924,7 +879,6 @@ int main(){
 					}			
 					else if(player.life<1){
 						fase = 8;
-						printf("%d\n",fase);
 						mciSendString("close fase",NULL,0,0);	
 					}		
 				}
@@ -934,6 +888,12 @@ int main(){
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);	    		
+	    		delay(1000);
+	    		text(RGB(255,255,255),32,(1630*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+	    		do{
+				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
+	    		fase = 6;
+			case 6:{
 				mciSendString("open .\\SFX\\Background\\Boss.mp3 type MPEGVideo alias fase",NULL,0,0);
 				char *fire[3];
 				for(index = 1;index <=3 ; index++){
@@ -942,13 +902,6 @@ int main(){
 					sprintf(fire[index-1],"play fire%d from 0",index);
 					mciSendString((char*)load_sound,NULL,0,0);
 				}
-	    		delay(1000);
-	    		text(RGB(255,255,255),32,(1630*res[0])/1920,res[1]-32,"Aperte Enter");
-	    		do{
-				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
-	    		fase = 6;
-			case 6:{
-				printf("0");
 				cleardevice();
 				int limite,hi;
 				double tg;
@@ -992,7 +945,6 @@ int main(){
 				}
 			    while(chefao){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
-			    		printf("1");
 				    	while(pausa){
 							if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								pausa = !pausa;
@@ -1003,14 +955,12 @@ int main(){
 			    		setactivepage(pg);
 			    		cleardevice();
 			    		//Mechanics Stuff======================================================================================
-			    		printf("2");
 			    		if(cicles%5== 0){
-							if(player.lanterna.alcance>=0 && player.loss){
+							if(player.lanterna.alcance>=0){
 								player.lanterna.alcance-=1;
 							}
 						}
 			    		//Spawn Stuff======================================================================================
-			    		printf("3");
 			    		for(index = 0 ; index < num; index++){
 			    			chance = rand()%300;
 			    			if(chance == 0 && enmy[index].spawned == false){
@@ -1031,7 +981,7 @@ int main(){
 							}
 						}
 						for(index = 0; index <2 ; index ++){
-							chance=rand()%500;
+							chance=rand()%250;
 							if(battery[index].spawned == 0 && chance == 0){
 								battery[index].spawned = 1;
 								battery[index].x = 0;
@@ -1046,7 +996,6 @@ int main(){
 							}
 						}
 			    		//Move Stuff=====================================================================================
-			    		printf("4");
 			    		player.moving = false;
 			    			if (GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								pausa = !pausa;
@@ -1129,7 +1078,6 @@ int main(){
 							}
 						}
 						//Hit Stuff=====================================================================================
-						printf("5");
 				    	boss.pos.angle = (int)(atan((float)(boss.pos.y-player.pos.y)/(float)(boss.pos.x-player.pos.x))*(180/3.14159265359));
 						if(boss.pos.angle < 0){
 							boss.pos.angle+=180;
@@ -1158,7 +1106,7 @@ int main(){
 				        	num = 15;
 				        	boss.speed = 10;
 						}
-				        if(player.pos.x-player.tamanho<=boss.pos.x+boss.tamanho && player.pos.x+player.tamanho >= boss.pos.x-boss.tamanho && player.loss){
+				        if(player.pos.x-player.tamanho<=boss.pos.x+boss.tamanho && player.pos.x+player.tamanho >= boss.pos.x-boss.tamanho){
 				        	if(player.pos.y-player.tamanho<=boss.pos.y+boss.tamanho && player.pos.y+player.tamanho >= boss.pos.y-boss.tamanho){
 				        		player.lanterna.alcance-=20;
 							}
@@ -1168,7 +1116,7 @@ int main(){
 								if(enmy[index].posi.y >= res[1]){
 									enmy[index].spawned = false;
 								}
-								if(enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho && player.loss){
+								if(enmy[index].posi.x+enmy[index].tamanho>=player.pos.x-player.tamanho && enmy[index].posi.x-enmy[index].tamanho<=player.pos.x+player.tamanho){
 									if(enmy[index].posi.y+enmy[index].tamanho>=player.pos.y-player.tamanho && enmy[index].posi.y-enmy[index].tamanho<=player.pos.y+player.tamanho){
 										enmy[index].spawned = false;
 										player.lanterna.alcance-=50;
@@ -1189,7 +1137,6 @@ int main(){
 						}
 						
 			    		//Drawstuff=====================================================================================
-			    		printf("6");
 			    		setcolor(RGB(128,128,0));
 				        setfillstyle(1,RGB(128,128,0));
 				        screenflashlight(player.pos.angle+15,player.pos.x,player.pos.y,player.lanterna.alcance,player.lanterna.angle);
@@ -1231,7 +1178,6 @@ int main(){
 						}
 						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
 						//Win/lose====================================================================================================
-						printf("7");
 						if(boss.health <= 0){
 							fase = 7;
 							break;
@@ -1303,7 +1249,6 @@ int main(){
 				bac.playing = false;
 	    		fase = 0;
 	    		wn = 30;
-	    		player.loss = true;
 	    		break;
 			case 8:{
 				cleardevice();
@@ -1316,7 +1261,6 @@ int main(){
 				bac.playing = false;
 				fase = 0;
 				wn = 30;
-				player.loss = true;
 				break;
 			}	
 		}
@@ -1347,6 +1291,5 @@ int main(){
 	free(btrmask);
 	free(key.img);
 	free(key.mask);
-	printf("\n");
 	system("pause");
 }
