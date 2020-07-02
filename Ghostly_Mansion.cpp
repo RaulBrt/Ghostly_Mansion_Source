@@ -33,10 +33,12 @@ void *fbmask[5];
 void *back[5];
 void *seta[4];
 void *death_screen;
+void *barra;
 int flash[8];
 int chance;
 int fase = 0;
 char *walk[8];
+char *fx[7];
 char *load_sound;
 bool done,pausa;
 //Structfy stuff=======================================================
@@ -77,7 +79,7 @@ struct boss{
 	pos pos;
 };
 struct background{	
-		bool playing;
+		bool loaded;
 		struct pos{
 				int x,y;
 		};
@@ -318,6 +320,11 @@ void load_img(){
 	death_screen = malloc(tam);
 	readimagefile("Images/Menus/Died.bmp",0,0,res[0],res[1]);
 	getimage(0,0,res[0],res[1],death_screen);
+	cleardevice();
+	tam = imagesize(0,0,512,58);
+	barra = malloc(tam);
+	readimagefile("Images/Objetos/Barra.bmp",0,0,512,58);
+	getimage(0,0,512,58,barra);
 	closegraph();
 }
 void text(int color,int tam, int x, int y, char* txt){
@@ -384,6 +391,9 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
 	done = false;
 	player.lanterna.alcance = 500;
 	player.pos.angle = 270;
+	player.score = 0;
+	key.spawned = false;
+	player.key = false;
 	enmy = NULL;
 	enmy = (enemy*)realloc(enmy,num*sizeof(enemy));
 	for (index = 0;index < num; index++){
@@ -408,9 +418,8 @@ bool game(int win, int num, int speed, int chaox, int chaoy,int parx, int pary, 
     player.pos.relx = player.pos.x - bac.pos.x;
     player.pos.rely = player.pos.y - bac.pos.y;
     long long unsigned int count = 0;
-    if(!bac.playing){
+    if(bac.loaded){
     	mciSendString("play fase from 0 repeat",NULL,0,0);
-    	bac.playing = true;
 	}
 	while(!done){
 		for(pg = 1; pg<=2;pg++){
@@ -694,11 +703,27 @@ int main(){
 	fase = 0;
 	bool playing = true;
 	bool resultado,again;
+	bool chefao;
 	int wn = 30;
 	int k,l;
 	setbkcolor(RGB(0,0,0));
 	load_sound = (char*)malloc(100*sizeof(char));
-	mciSendString("open .\\SFX\\Other\\Key.mp3 alias key",NULL,0,0);
+	bac.loaded = false;
+	mciSendString("open .\\SFX\\Other\\Key.mp3 type MPEGVideo alias key",NULL,0,0);
+	for(index = 1;index <=7 ; index++){
+		fx[index-1] = (char*)malloc(20*sizeof(char));
+		sprintf(load_sound,"open .\\SFX\\Other\\FX%d.mp3 type MPEGVideo alias fx%d",index,index);
+		sprintf(fx[index-1],"play fx%d from 0",index);
+		mciSendString((char*)load_sound,NULL,0,0);
+	}
+	char *fire[3];
+	for(index = 1; index <=3; index++){
+		fire[index-1] = (char*)malloc(20*sizeof(char));
+		sprintf(load_sound,"open .\\SFX\\Other\\Fire%d.mp3 type MPEGVideo alias fire%d",index,index);
+		sprintf(fire[index-1],"play fire%d from 0",index);
+		printf("\n%s",fire[index-1]);
+		mciSendString((char*)load_sound,NULL,0,0);
+	}		
 	waveOutSetVolume(0,0xFFFFFFFF);
 	for(index=0;index<8;index++){
 		walk[index] = (char*)malloc(20*sizeof(char));
@@ -709,14 +734,27 @@ int main(){
 	    		char menu[3][26]={"Images/Menus/menu.bmp","Images/Menus/menu_2.bmp","Images/Menus/Creditos.bmp"};
 	    		int imagem = 0;
 	    		player.life = 2;
-	    		if(bac.playing){
+	    		if(bac.loaded){
 	    			mciSendString("close fase",NULL,0,0);
+	    			bac.loaded = false;
 				}
-	    		while(imagem < 3){
+				if(!bac.loaded){
+					mciSendString("open .\\SFX\\Background\\Menu.mp3 type MPEGVideo alias fase",NULL,0,0);
+					mciSendString("play fase from 0 repeat",NULL,0,0);
+					bac.loaded = true;
+				}
+
+				while(imagem < 3){
 					for(pg = 1;pg<=2;pg++){
+						chance = rand()%250;
+						if(chance == 0){
+							chance = rand()%7;
+							mciSendString((char*)fx[chance],NULL,0,0);
+						}
 						setactivepage(pg);
 						cleardevice();
 						readimagefile(menu[imagem],0,0,res[0],res[1]);
+						printf("2");
 						if(imagem == 0){
 							if (check_button((190*res[0])/1920,(650*res[1])/1080,(440*res[0])/1920,(770*res[1])/1080)){
 								fase = 1;
@@ -759,19 +797,28 @@ int main(){
 					sprintf(walk[index-1],"play stone%d from 0",index);
 					mciSendString((char*)load_sound,NULL,0,0);
 				}
-				mciSendString("open .\\SFX\\Background\\Fase.mp3 type MPEGVideo alias fase",NULL,0,0);
+				if(bac.loaded){
+					mciSendString("close fase",NULL,0,0);
+					bac.loaded = false;
+				}
+				if(!bac.loaded){
+					mciSendString("open .\\SFX\\Background\\Fase.mp3 type MPEGVideo alias fase",NULL,0,0);
+					mciSendString("play fase from 0 repeat",NULL,0,0);
+					bac.loaded = true;
+				}
 	    		delay(1000);
 	    		setactivepage(1);
-	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+	    		text(RGB(255,255,255),32,0,res[1]-32,(char*)"Aperte Enter");
 	    		setvisualpage(1);
 	    		do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 2;
+	    		player.score = 0;
 	    		break;
 	    	case 2:{
 	    		cicles = 0;
 	    		enmy = NULL;
-	    		resultado = game(15 ,10, 4, 2048, 800, 2048, 256, 0);	
+	    		resultado = game(1 ,10, 4, 2048, 800, 2048, 256, 0);	
 				if (resultado == true){
 					fase = 3;
 				}
@@ -801,16 +848,7 @@ int main(){
 							}
 							setactivepage(pg);
 							cleardevice();
-							setcolor(RGB(255,255,255));
-							setfillstyle(1,RGB(255,255,255));
-							rectangle((580*res[0])/1920,(130*res[1])/1080,(1340*res[0])/1920,(750*res[1])/1080);
-							floodfill((581*res[0])/1920,(131*res[1])/1080,RGB(255,255,255));
-							rectangle((295*res[0])/1920,(820*res[1])/1080,(1690*res[0])/1920,(950*res[1])/1080);
-							if(mousex() >= (295*res[0])/1920 && mousex() <= (1690*res[0])/1920 && mousey() >= (820*res[1])/1080 && mousey() <= (950*res[1])/1080){
-								setfillstyle(1,RGB(255,255,0));
-							}
-							floodfill((296*res[0])/1920,(821*res[1])/1080,RGB(255,255,255));
-							putimage(0,0,death_screen,AND_PUT);
+							putimage(0,0,death_screen,COPY_PUT);
 							if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
 								fase=8;
 								break;
@@ -823,7 +861,7 @@ int main(){
 					}		
 				}
 				break;
-			}	
+			}
 			case 3:{
 	    		setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut2.bmp",0,0,res[0],res[1]);
@@ -836,20 +874,24 @@ int main(){
 					mciSendString((char*)load_sound,NULL,0,0);
 				}
 	    		delay(1000);   		
-	    		text(RGB(255,255,255),32,(1650*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+	    		text(RGB(255,255,255),32,0,res[1]-32,(char*)"Aperte Enter");
 				do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 4;
+	    		player.score = 0;
 	    		break;
 			}
 
 			case 4:
 				cicles = 0;
 				enmy = NULL;
-	    		resultado = game(25 ,20, 6, 2048, 1600, 2048, 256,2);	
+	    		resultado = game(1 ,20, 6, 2048, 1600, 2048, 256,2);	
 				if (resultado == true){
 					fase = 5;
-					mciSendString("close fase",NULL,0,0);
+					if(bac.loaded){
+						mciSendString("close fase",NULL,0,0);
+						bac.loaded = false;
+					}
 					break;
 				}
 				if (resultado == false){
@@ -879,42 +921,45 @@ int main(){
 					}			
 					else if(player.life<1){
 						fase = 8;
-						mciSendString("close fase",NULL,0,0);	
+						if(bac.loaded){
+							mciSendString("close fase",NULL,0,0);
+							bac.loaded = false;
+						}
 					}		
 				}
 				free(enmy);
 				break;
-			case 5:
+			case 5:{
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut3.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);	    		
 	    		delay(1000);
-	    		text(RGB(255,255,255),32,(1630*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+	    		text(RGB(255,255,255),32,0,res[1]-32,(char*)"Aperte Enter");
 	    		do{
 				}while(!((GetAsyncKeyState(VK_RETURN) && 0x8000)));
 	    		fase = 6;
-			case 6:{
-				mciSendString("open .\\SFX\\Background\\Boss.mp3 type MPEGVideo alias fase",NULL,0,0);
-				char *fire[3];
-				for(index = 1;index <=3 ; index++){
-					fire[index-1] = (char*)malloc(50*sizeof(char));
-					sprintf(load_sound,"open .\\SFX\\Other\\Fire%d.mp3 type MPEGVideo alias fire%d",index,index);
-					sprintf(fire[index-1],"play fire%d from 0",index);
-					mciSendString((char*)load_sound,NULL,0,0);
+	    		break;
+	    	}
+			case 6:{//Chefão
+				if(bac.loaded){
+					mciSendString("close fase",NULL,0,0);
+					bac.loaded = false;
+				}
+				if(!bac.loaded){
+					mciSendString("open .\\SFX\\Background\\Boss.mp3 type MPEGVideo alias fase",NULL,0,0);
+					mciSendString("play fase from 0",NULL,0,0);
+					bac.loaded = true;
 				}
 				cleardevice();
 				int limite,hi;
 				double tg;
-				bool chefao = true;
 				for(index = 0; index < 2; index++){
 					battery[index].spawned = 0;
 					battery[index].tamanho = 48;
 				}
-				enmy = NULL;
-				enmy = (enemy*)realloc(enmy,15*sizeof(enemy));
 			    bac.chao.larg = res[1];
 			    bac.chao.alt = res[1];
-			    limite = res[1]-(320*bac.chao.alt/2048);
+			    limite = res[1]-(400*bac.chao.alt/1600);
 			    player.pos.x = (int)(res[0]/2);
 			   	player.pos.y = bac.chao.alt-((bac.chao.alt-limite)/2);
 			    player.lanterna.alcance = 450;
@@ -931,17 +976,18 @@ int main(){
 			    boss.aggro = 500;
 				num = 7;
 			    enmy = NULL;
-			    enmy = (enemy*)realloc(enmy,num*sizeof(enemy));
-				for(index = 0; index < 20; index++){
+			    enmy = (enemy*)realloc(enmy,15*sizeof(enemy));
+				for(index = 0; index < 15; index++){
 					enmy[index].spawned = false;
 					enmy[index].tamanho = 32;
 				}
 				pausa = false;
-				bac.playing = false;
+				bac.loaded = false;
+				chefao = true;
 			    cicles = 0;
-			    if(!bac.playing){
+			    if(!bac.loaded){
 			    	mciSendString("play fase from 0 repeat",NULL,0,0);
-			    	bac.playing = true;
+			    	bac.loaded = true;
 				}
 			    while(chefao){
 			    	for(pg = 1 ; pg <= 2 ; pg ++){
@@ -977,11 +1023,12 @@ int main(){
 								}
 								enmy[index].spawned = true;
 								chance = rand()%3;
+								printf("\n%s",fire[chance]);
 								mciSendString(fire[chance],NULL,0,0);
 							}
 						}
 						for(index = 0; index <2 ; index ++){
-							chance=rand()%250;
+							chance=rand()%150;
 							if(battery[index].spawned == 0 && chance == 0){
 								battery[index].spawned = 1;
 								battery[index].x = 0;
@@ -990,7 +1037,7 @@ int main(){
 									battery[index].x = rand()%bac.chao.larg;
 								}
 								
-								while(battery[index].y <= limite){
+								while(battery[index].y <= limite+30){
 									battery[index].y = rand()%bac.chao.alt;	
 								}
 							}
@@ -1157,14 +1204,15 @@ int main(){
 							}
 						}
 				        if(player.moving){
-				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][(cicles/2)%5],AND_PUT);
-							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][(cicles/2)%5],OR_PUT);
+				        	
+				        	putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][(int)((cicles/2)%5)],AND_PUT);
+							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][(int)((cicles/2)%5)],OR_PUT);
 							if(cicles%6 == 0){
-								chance = rand()%3;
+								chance = rand()%8;
 								mciSendString(walk[chance],NULL,0,0);
 							}
 						}
-						else{
+						if (!player.moving){
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.mask[player.pos.direction][0],AND_PUT);
 							putimage(player.pos.x-(player.tamanho),player.pos.y-(player.tamanho),player.atlas[player.pos.direction][0],OR_PUT);
 						}
@@ -1176,16 +1224,23 @@ int main(){
 			    				putimage(enmy[index].posi.x-enmy[index].tamanho,enmy[index].posi.y-enmy[index].tamanho,fbimg[(cicles+index)%5],OR_PUT);
 							}
 						}
+						putimage((res[0]/2)-256,0,barra,COPY_PUT);
+						setfillstyle(1,RGB(255,0,0));
+						bar((res[0]/2)-248,10,((495*boss.health)/15000)+((res[0]/2)-248),50);
 						mask(bac.pos.x,bac.pos.y,bac.pos.x+bac.chao.larg,bac.pos.y+bac.chao.alt);
 						//Win/lose====================================================================================================
 						if(boss.health <= 0){
+							chefao = false;
 							fase = 7;
 							break;
 						}
 						else if (player.lanterna.alcance <= 0){
 							if(player.life>=1){
-								mciSendString("stop fase",NULL,0,0);
-								bac.playing = false;
+								if (bac.loaded){
+									mciSendString("close fase",NULL,0,0);
+									bac.loaded = false;
+								}
+								chefao = false;
 								setactivepage(1);
 								draw_death_screen(player.life);
 								player.life--;
@@ -1207,7 +1262,7 @@ int main(){
 								}
 								chefao = false;
 								break;
-							}			
+							}	
 							else if(player.life<1){
 								fase = 8;
 								chefao = false;
@@ -1223,32 +1278,30 @@ int main(){
 						}
 					}
 				}
-				enmy = NULL;
-				free(enmy);
-				delete enmy;
 				break;
-				}
+			}
 			case 7:
 				setactivepage(1);
 	    		readimagefile("Images/Cutscenes/cut4.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(1);
 	    		delay(1000);
-	    		getch();
+	    		while(!GetAsyncKeyState(VK_RETURN) && 0x8000){
+	    			text(RGB(255,255,255),32,(0*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+				}
 	    		setactivepage(2);
 	    		readimagefile("Images/Cutscenes/cut5.bmp",0,0,res[0],res[1]);
 	    		setvisualpage(2);
 	    		delay(1000);
-	    		getch();
+	    		while(!GetAsyncKeyState(VK_RETURN) && 0x8000){
+	    			text(RGB(255,255,255),32,(0*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+				}
 	    		readimagefile("Images/Menus/Creditos.bmp",0,0,res[0],res[1]);
 	    		while(!check_button((1630*res[0])/1920,(960*res[1])/1080,(1900*res[0])/1920,(1050*res[1])/1080)){
-	    			if(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+	    			if(GetAsyncKeyState(VK_RETURN) && 0x8000){
 	    				break;
 					}
 				}
-				mciSendString("close fase",NULL,0,0);
-				bac.playing = false;
 	    		fase = 0;
-	    		wn = 30;
 	    		break;
 			case 8:{
 				cleardevice();
@@ -1256,11 +1309,10 @@ int main(){
 				readimagefile("Images/Cutscenes/over.bmp",0,0,res[0],res[1]);
 				setvisualpage(1);
 				delay(1000);
-				getch();
-				mciSendString("close fase",NULL,0,0);
-				bac.playing = false;
+				while(GetAsyncKeyState(VK_ESCAPE) && 0x8000){
+	    			text(RGB(255,255,255),32,(0*res[0])/1920,res[1]-32,(char*)"Aperte Enter");
+				}
 				fase = 0;
-				wn = 30;
 				break;
 			}	
 		}
